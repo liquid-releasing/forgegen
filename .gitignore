@@ -39,6 +39,12 @@ Thumbs.db
 # mkdocs build output
 site/
 
+# PyInstaller spec backup
+*.spec.bak
+
+# Generated icon variants (CI regenerates the .icns from the PNG)
+/media/forgegen.icns
+
 # Internal / not for public release
 # Research notes about external projects, third-party PDFs, internal
 # planning docs — keep these in a sibling private folder, not in the

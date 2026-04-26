@@ -1,0 +1,228 @@
+name: Release Builds
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Windows build
+  # ---------------------------------------------------------------------------
+  build-windows:
+    name: Build — Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-desktop.txt
+
+      - name: Build with PyInstaller
+        run: pyinstaller ForgeGen.spec --noconfirm --clean
+
+      - name: Verify build
+        run: |
+          if (!(Test-Path "dist\ForgeGen\ForgeGen.exe")) {
+            Write-Error "Build artifact not found"
+            exit 1
+          }
+
+      - name: Zip artifact
+        run: Compress-Archive -Path dist\ForgeGen -DestinationPath dist\ForgeGen-windows.zip
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForgeGen-windows
+          path: dist/ForgeGen-windows.zip
+
+  # ---------------------------------------------------------------------------
+  # macOS build
+  # ---------------------------------------------------------------------------
+  build-macos:
+    name: Build — macOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-desktop.txt
+
+      - name: Generate .icns icon
+        run: |
+          ICO_SRC="media/forgegen_icon.png"
+          ICNS_OUT="media/forgegen.icns"
+          if [ -f "$ICO_SRC" ] && [ ! -f "$ICNS_OUT" ]; then
+            ICONSET_DIR="$(mktemp -d)/ForgeGen.iconset"
+            mkdir -p "$ICONSET_DIR"
+            for SIZE in 16 32 64 128 256 512; do
+              sips -z "$SIZE" "$SIZE" "$ICO_SRC" --out "$ICONSET_DIR/icon_${SIZE}x${SIZE}.png" 2>/dev/null
+              DOUBLE=$((SIZE * 2))
+              sips -z "$DOUBLE" "$DOUBLE" "$ICO_SRC" --out "$ICONSET_DIR/icon_${SIZE}x${SIZE}@2x.png" 2>/dev/null
+            done
+            iconutil -c icns "$ICONSET_DIR" -o "$ICNS_OUT"
+            rm -rf "$(dirname "$ICONSET_DIR")"
+            echo "Generated $ICNS_OUT"
+          fi
+
+      - name: Build with PyInstaller
+        run: pyinstaller ForgeGen.spec --noconfirm --clean
+
+      - name: Verify build
+        run: |
+          if [ ! -d "dist/ForgeGen.app" ] && [ ! -d "dist/ForgeGen" ]; then
+            echo "Build artifact not found"
+            exit 1
+          fi
+
+      - name: Zip artifact
+        run: |
+          cd dist
+          if [ -d "ForgeGen.app" ]; then
+            zip -r ForgeGen-macos.zip ForgeGen.app
+          else
+            zip -r ForgeGen-macos.zip ForgeGen
+          fi
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForgeGen-macos
+          path: dist/ForgeGen-macos.zip
+
+  # ---------------------------------------------------------------------------
+  # Linux build
+  # ---------------------------------------------------------------------------
+  build-linux:
+    name: Build — Linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies (PyWebView GTK backend)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-gi \
+            gir1.2-gtk-3.0 \
+            gir1.2-webkit2-4.1 \
+            libgirepository1.0-dev \
+            libcairo2-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-desktop.txt
+
+      - name: Build with PyInstaller
+        run: pyinstaller ForgeGen.spec --noconfirm --clean
+
+      - name: Verify build
+        run: |
+          if [ ! -f "dist/ForgeGen/ForgeGen" ]; then
+            echo "Build artifact not found"
+            exit 1
+          fi
+
+      - name: Create tarball
+        run: tar -czf dist/ForgeGen-linux.tar.gz -C dist ForgeGen
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ForgeGen-linux
+          path: dist/ForgeGen-linux.tar.gz
+
+  # ---------------------------------------------------------------------------
+  # Create GitHub Release with all artifacts
+  # ---------------------------------------------------------------------------
+  release:
+    name: Publish Release
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ForgeGen-windows
+          path: artifacts/
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ForgeGen-macos
+          path: artifacts/
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ForgeGen-linux
+          path: artifacts/
+
+      - name: Compute release name
+        id: relname
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          STRIPPED="${TAG#v}"
+          NAME="ForgeGen ${STRIPPED//-/ }"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: liquid-releasing/forgegen-releases
+          token: ${{ secrets.RELEASES_PAT }}
+          name: ${{ steps.relname.outputs.name }}
+          prerelease: false
+          files: |
+            artifacts/ForgeGen-windows.zip
+            artifacts/ForgeGen-macos.zip
+            artifacts/ForgeGen-linux.tar.gz
+          body: |
+            Generate funscripts from audio in seconds — a local desktop app.
+
+            ## Downloads
+            - **Windows** — `ForgeGen-windows.zip` — unzip and run `ForgeGen.exe`
+            - **macOS** — `ForgeGen-macos.zip` — unzip and open `ForgeGen.app`
+            - **Linux** — `ForgeGen-linux.tar.gz` — extract and run `ForgeGen/ForgeGen`
+
+            See the [docs](https://liquid-releasing.github.io/forgegen) for a first-run walkthrough.
+          append_body: true
+          # Auto-prepend the commit/PR list since the previous tag —
+          # cheap per-version "what's new" without maintaining a
+          # changelog. Major/marketing releases override by pre-writing
+          # a CHANGELOG entry or rich annotated tag message.
+          generate_release_notes: true
