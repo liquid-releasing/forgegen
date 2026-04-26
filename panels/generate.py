@@ -270,12 +270,25 @@ def render() -> None:
             help=preset["desc"],
             type="primary" if selected else "secondary",
         ):
+            _source_changed = preset["source"] != st.session_state.source
             st.session_state.style = key
             st.session_state.low = preset["low"]
             st.session_state.high = preset["high"]
             st.session_state.source = preset["source"]
             st.session_state.curve = None
             st.session_state.funscript_bytes = None
+            # If the new style uses a different audio source (percussive vs
+            # full mix), the existing beat_map was computed with the old
+            # source — so re-detect beats. Without this, a style switch
+            # would only affect curve range, not actual beat detection.
+            if _source_changed and st.session_state.last_analysed_path:
+                _path = st.session_state.last_analysed_path
+                _name = st.session_state.audio_name or _path.split("/")[-1].split("\\")[-1]
+                st.session_state.beat_map = None
+                st.session_state.modes = None
+                st.session_state.analysis_pending = (_path, _name, False)
+                st.session_state.analysis_log = []
+                st.session_state.last_error = None
             st.rerun()
 
     # Show active style description
