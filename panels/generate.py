@@ -239,7 +239,7 @@ def render() -> None:
     # -----------------------------------------------------------------------
 
     st.caption("Beat energy — coloured by phrase mode")
-    st.plotly_chart(_energy_chart(bm, modes), use_container_width=True)
+    st.plotly_chart(_energy_chart(bm, modes), width="stretch")
 
     # Mode legend
     active_modes = {m for _, _, m in modes}
@@ -266,7 +266,7 @@ def render() -> None:
         if col.button(
             preset["label"],
             key=f"style_{key}",
-            use_container_width=True,
+            width="stretch",
             help=preset["desc"],
             type="primary" if selected else "secondary",
         ):
@@ -288,7 +288,7 @@ def render() -> None:
     # Generate button
     # -----------------------------------------------------------------------
 
-    if st.button("▶ Generate", type="primary", use_container_width=True):
+    if st.button("▶ Generate", type="primary", width="stretch"):
         with st.spinner("Generating funscript…"):
             curve = beats_to_curve(
                 bm,
@@ -316,7 +316,7 @@ def render() -> None:
         st.caption("Generated funscript")
         st.plotly_chart(
             _funscript_chart(st.session_state.curve),
-            use_container_width=True,
+            width="stretch",
         )
 
         action_count = len(st.session_state.curve)
@@ -329,7 +329,7 @@ def render() -> None:
             col_save, col_dl = st.columns(2)
 
             # Save to disk
-            if col_save.button("💾 Save to folder", use_container_width=True, type="primary"):
+            if col_save.button("💾 Save to folder", width="stretch", type="primary"):
                 out_dir = Path(st.session_state.output_dir)
                 try:
                     out_dir.mkdir(parents=True, exist_ok=True)
@@ -345,7 +345,7 @@ def render() -> None:
                 data=st.session_state.funscript_bytes,
                 file_name=filename,
                 mime="application/json",
-                use_container_width=True,
+                width="stretch",
             )
 
             # Show saved path

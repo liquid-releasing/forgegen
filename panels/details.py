@@ -97,7 +97,7 @@ def render() -> None:
     # Regenerate
     # -----------------------------------------------------------------------
 
-    if st.button("↺ Regenerate", type="primary", use_container_width=True):
+    if st.button("↺ Regenerate", type="primary", width="stretch"):
         with st.spinner("Regenerating…"):
             st.session_state.modes = updated_modes
             curve = beats_to_curve(bm, low=st.session_state.low, high=st.session_state.high)
@@ -139,4 +139,4 @@ def render() -> None:
             }
             for i, (b, e) in enumerate(zip(bm.beats, bm.energy))
         ]
-        st.dataframe(pd.DataFrame(rows), use_container_width=True, height=300)
+        st.dataframe(pd.DataFrame(rows), width="stretch", height=300)
