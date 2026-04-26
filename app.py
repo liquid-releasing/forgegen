@@ -444,6 +444,27 @@ else:
         })
     st.dataframe(_pd.DataFrame(_rows), width="stretch", hide_index=True)
 
+    # --- Funscript heatmap (third chart) — only after Generate has produced one ---
+    if st.session_state.funscript_bytes:
+        try:
+            import json as _json
+            import io as _io
+            from forgegen_core.heatmap import render_heatmap as _render_heatmap
+            _fs = _json.loads(st.session_state.funscript_bytes)
+            _actions = _fs.get("actions", [])
+            if _actions:
+                _dur = int(max(int(a["at"]) for a in _actions))
+                _img = _render_heatmap(_actions, _dur, width=2000, height=60)
+                _buf = _io.BytesIO()
+                _img.save(_buf, format="PNG")
+                st.caption(
+                    "Funscript intensity — blue (calm) → red (hot), "
+                    "OpenFunscripter / XBVR colour convention"
+                )
+                st.image(_buf.getvalue(), width="stretch")
+        except Exception as _exc:
+            st.caption(f"Heatmap render failed: {_exc}")
+
     st.divider()
 
     # --- Generate / Details tabs ---
