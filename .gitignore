@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Tooling
+.mypy_cache/
+.ruff_cache/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# mkdocs build output
+site/
+
+# Internal / not for public release
+# Research notes about external projects, third-party PDFs, internal
+# planning docs — keep these in a sibling private folder, not in the
+# public repo.
+*.pdf
+internal/
+
+# Streamlit local state
+.streamlit/secrets.toml
