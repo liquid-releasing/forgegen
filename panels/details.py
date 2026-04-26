@@ -39,9 +39,18 @@ def render() -> None:
     st.markdown("**Controls**")
     col1, col2, col3 = st.columns(3)
 
-    new_low = col1.slider("Low (trough)", 0, 40, st.session_state.low, key="det_low")
-    new_high = col2.slider("High (peak)", 60, 100, st.session_state.high, key="det_high")
-    new_source = col3.selectbox(
+    new_low = col1.slider("Low (trough floor)", 0, 40, st.session_state.low, key="det_low")
+    new_high = col2.slider("High (peak ceiling)", 60, 100, st.session_state.high, key="det_high")
+    new_center = col3.slider(
+        "Center",
+        0, 100, st.session_state.center,
+        key="det_center",
+        help="Midpoint the curve oscillates around. 50 = mid-stroke (default). "
+             "Drag up for upward-biased strokes, down for downward.",
+    )
+
+    col4, _ = st.columns([1, 2])
+    new_source = col4.selectbox(
         "Beat source",
         ["percussive", "full"],
         index=0 if st.session_state.source == "percussive" else 1,
@@ -52,10 +61,12 @@ def render() -> None:
     if (
         new_low != st.session_state.low
         or new_high != st.session_state.high
+        or new_center != st.session_state.center
         or new_source != st.session_state.source
     ):
         st.session_state.low = new_low
         st.session_state.high = new_high
+        st.session_state.center = new_center
         st.session_state.source = new_source
         st.session_state.curve = None
         st.session_state.funscript_bytes = None
@@ -100,8 +111,18 @@ def render() -> None:
     if st.button("↺ Regenerate", type="primary", width="stretch"):
         with st.spinner("Regenerating…"):
             st.session_state.modes = updated_modes
-            curve = beats_to_curve(bm, low=st.session_state.low, high=st.session_state.high)
-            shaped = shape_curve(curve, updated_modes, low=st.session_state.low)
+            curve = beats_to_curve(
+                bm,
+                low=st.session_state.low,
+                high=st.session_state.high,
+                center=st.session_state.center,
+            )
+            shaped = shape_curve(
+                curve,
+                updated_modes,
+                low=st.session_state.low,
+                center=st.session_state.center,
+            )
             st.session_state.curve = shaped
 
             with tempfile.NamedTemporaryFile(suffix=".funscript", delete=False) as tmp:

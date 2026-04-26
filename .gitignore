@@ -51,6 +51,7 @@ site/
 # public repo.
 *.pdf
 internal/
+testcases/
 
 # Streamlit local state
 .streamlit/secrets.toml

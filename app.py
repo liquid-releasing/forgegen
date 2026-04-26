@@ -59,6 +59,7 @@ _DEFAULTS = dict(
     style="rhythmic",
     low=10,
     high=90,
+    center=50,               # midpoint of stroke (0-100). Centered model.
     source="percussive",
     output_dir=str(Path.home() / "Downloads"),
     saved_path=None,

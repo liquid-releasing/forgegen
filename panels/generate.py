@@ -234,24 +234,9 @@ def render() -> None:
         st.session_state.modes = classify_modes(bm)
     modes = st.session_state.modes
 
-    # -----------------------------------------------------------------------
-    # Energy heatmap
-    # -----------------------------------------------------------------------
-
-    st.caption("Beat energy — coloured by phrase mode")
-    st.plotly_chart(_energy_chart(bm, modes), width="stretch")
-
-    # Mode legend
-    active_modes = {m for _, _, m in modes}
-    legend_cols = st.columns(len(active_modes))
-    for col, mode in zip(legend_cols, sorted(active_modes)):
-        colour = _MODE_COLOURS.get(mode, "#aaa")
-        col.markdown(
-            f"<span style='color:{colour}'>\u25a0</span> {mode}",
-            unsafe_allow_html=True,
-        )
-
-    st.divider()
+    # Energy chart + phrase-mode legend already render in app.py's Analysis
+    # panel above the tabs \u2014 don't render them here too, identical
+    # plotly_chart params would collide on Streamlit's auto-generated ID.
 
     # -----------------------------------------------------------------------
     # Style cards
@@ -307,8 +292,14 @@ def render() -> None:
                 bm,
                 low=st.session_state.low,
                 high=st.session_state.high,
+                center=st.session_state.center,
             )
-            shaped = shape_curve(curve, modes, low=st.session_state.low)
+            shaped = shape_curve(
+                curve,
+                modes,
+                low=st.session_state.low,
+                center=st.session_state.center,
+            )
             st.session_state.curve = shaped
 
             # Build funscript bytes in memory via temp file
