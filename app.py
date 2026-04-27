@@ -60,6 +60,11 @@ _DEFAULTS = dict(
     low=10,
     high=90,
     center=50,               # midpoint of stroke (0-100). Centered model.
+    stroke_density="full",   # canonical full = PD-style (1 stroke/beat).
+                             # half = preview of FF's halve transform output.
+    tone="flat",             # tone = whole-shape gestalt: flat | rise | fall.
+                             # Flat = constant center 50. Rise = 30→70.
+                             # Fall = 70→30. First "tone" primitive.
     source="percussive",
     output_dir=str(Path.home() / "Downloads"),
     saved_path=None,

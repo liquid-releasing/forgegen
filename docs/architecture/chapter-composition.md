@@ -1,0 +1,208 @@
+# forgegen — Chapter-Based Haptic Narrative Composition
+
+> Architectural guidance, locked 2026-04-26. The reframe of forgegen's purpose
+> at the v0.0.4 milestone, validated against three quintessential gold-standard
+> hand-crafted reference tracks.
+
+## What forgegen actually is
+
+forgegen is **not** an "audio-to-funscript converter." It is a **multi-hour
+structured haptic narrative composer**. The structural unit is the **chapter**;
+each chapter carries an **intent** that biases generation parameters within
+its time range.
+
+The name is misleading on purpose: we generate, but what we generate is a
+*narrative*, not a *file*.
+
+## Why this reframe (the gold-standard evidence)
+
+Three hand-crafted reference tracks identified by the artist as quintessential
+examples of the form:
+
+| Track | Duration | Actions/s | Mean pos | Range | Avg stroke | Avg vel | p90 vel |
+|---|---|---|---|---|---|---|---|
+| Magik #3 Pt 1 | 73 min | 4.1 | 45.8 | 0–100 | 59.5 | 244 | 404 |
+| Magik #3 Pt 2 | 68 min | 2.9 | 48.4 | 0–100 | 85.7 | 250 | 334 |
+| RoD EE 2025 | 90 min | 4.2 | 49.8 | 0–100 | 98.5 | 664 | 943 |
+
+Three findings overturned earlier modelling assumptions:
+
+1. **Center stays near 50 across the entire track.** Even on RoD's 90-minute
+   span, every 7.5-minute chunk averages 49–50. Track-wide rise/fall *tone*
+   (the v1 primitive) is the **exception**, not the default.
+2. **Range is full 0–100 in every chunk.** No "stingy" sections. The full
+   range is in constant use throughout. Energy normalisation is the right
+   default; minimum amplitude floors should be generous.
+3. **Velocity is the primary moment-to-moment dimension.** RoD averages 664
+   units/s with p90 943. PythonDancer's 324 isn't just a floor — it's *half*
+   what the gold standard does. The artistry is in fast, full-range motion,
+   not slow drift.
+
+And the artist's own words:
+
+> *"non-trivial — all over an hour. which means they are tracking a story
+> over time. hence the need for chapters!"*
+
+> *"developers are crafting the story; it's too hard for them to put in
+> chapters."*
+
+The first observation locks the structural unit. The second locks the UX
+constraint: **chapter authoring must be effortless for storytellers**.
+
+## The intent vocabulary
+
+Each chapter is tagged with an *intent*. Intent → parameter target:
+
+| Intent | Amplitude | Velocity | Density | Centre motion | Mode bias |
+|---|---|---|---|---|---|
+| **Intro** | low (compressed ±15) | slow | sparse | stable | tease/break |
+| **Build** | rises across chapter | accelerating | increasing | optional gentle drift | edging |
+| **Sustain** | steady mid-high | steady | full | flat | steady/fast |
+| **Edge** | high but capped under climax | varied bursts | full | flat (held) | edging |
+| **Climax** | max (±50) | max | max | flat | fast |
+| **Recover** | drops over chapter | decelerating | thinning | optional fall drift | slow/tease |
+| **Outro** | low | slow | sparse | flat | break/slow |
+
+The composer thinks in narrative arcs. *"This part is a build, this part is
+edge, this part is climax."* Not *"low=10, high=90, density=full, target_vel=400."*
+
+## Architecture
+
+```
+audio + chapters[(start_ms, end_ms, intent, title?)]
+         |
+         v
+    analyze_beats           (existing — videoflow)
+         |
+         v
+    classify_modes          (existing — videoflow)
+         |
+         v
+    [NEW] for each chapter:
+        bias = INTENT_BIASES[chapter.intent]
+        apply bias to (low, high, center, density, energy_curve, target_velocity)
+        generate curve segment for chapter time range
+         |
+         v
+    concatenate segments + smooth boundaries
+         |
+         v
+    funscript with chapter metadata embedded
+```
+
+Within each chapter the existing pipeline runs (beat detection, phrase
+classification, curve shaping). The parameter envelope is *bent* by chapter
+intent rather than replaced.
+
+The `center_trajectory` and `tone_per_phrase` primitives in `videoflow`
+remain valuable, repurposed: they apply *per chapter for amplitude / density
+envelopes*, not for whole-track centre drift.
+
+## Chapter sources (priority order)
+
+1. **User-authored** in forgegen — chapter timeline editor, optimised for
+   storyteller flow (see UX constraint below).
+2. **Embedded mp4 chapters** — videos may already carry chapter markers from
+   authoring tools. forgegen reads via `ffprobe -show_chapters`.
+3. **Auto-detected** — propose boundaries from audio structure (major energy /
+   spectral / harmonic shifts). User confirms / adjusts / labels.
+
+For v0.0.4 MVP: support (2) + manual UI for (1). Defer auto-detection to
+v0.0.5.
+
+## UX constraint: chapter authoring must be effortless
+
+The artist's observation: *"developers are crafting the story; it's too hard
+for them to put in chapters."* The chapter editor cannot be a configuration
+form. It must be a **performance instrument**:
+
+- **Play-and-mark** — start playback, tap a hotkey at chapter boundaries,
+  keep going.
+- **Single-key intent assignment** — number keys 1–7 mapped to the seven
+  intents, applied to the most recent chapter.
+- **Visual timeline** — audio waveform / energy chart with chapter overlays;
+  drag to adjust boundaries.
+- **Auto-propose, then confirm** — when auto-detection lands, the artist
+  confirms boundaries with Enter or splits/merges with Tab/Shift-Tab.
+  Authoring becomes review, not creation from scratch.
+- **Undo / redo as a first-class feature** — exploration without consequences.
+
+This is closer to a video editor or DAW marker workflow than a configuration
+panel. The artist already has the story in their head; the tool's job is to
+get out of the way.
+
+## Within-chapter modulation
+
+- **Build chapter** — amplitude scale ramps from ~0.6 at chapter start to
+  1.0 at end. Velocity target ramps similarly. The `center_trajectory`
+  primitive is reused per-chapter for amplitude / density envelopes,
+  *not* for centre drift.
+- **Sustain chapter** — amplitude scale ~0.85 throughout, velocity target
+  steady, no envelope motion.
+- **Edge chapter** — amplitude high and *held* (no climax); velocity has
+  varied bursts; density full.
+- **Climax chapter** — every parameter at max; chapters of this intent
+  should be short (minutes, not 10s of minutes).
+- **Recover chapter** — amplitude scale drops linearly; velocity target
+  falls; density thins.
+
+## Output
+
+A funscript with chapter metadata embedded, e.g.
+
+```json
+{
+  "version": "1.0",
+  "actions": [...],
+  "metadata": {
+    "title": "...",
+    "chapters": [
+      {"at": 0,        "name": "intro",   "intent": "intro"},
+      {"at": 90000,    "name": "build 1", "intent": "build"},
+      {"at": 480000,   "name": "edge",    "intent": "edge"},
+      ...
+    ]
+  }
+}
+```
+
+ForgePlayer reads the chapter metadata for chapter-nav and favourites
+(see `project_forgeplayer_chapters_forgegen.md` in private memory).
+`funscript-tools` may need chapter pass-through across the multi-channel
+renderer pipeline.
+
+## Open questions / decisions still to make
+
+- **Within-chapter centre drift**: should `center` drift inside a chapter?
+  Gold standards don't drift centre even within phrases — variation lives in
+  amplitude / velocity. Default: no centre drift, only amplitude envelope.
+- **Boundary smoothing**: linear cross-fade between chapter parameter sets,
+  or instant switch? Gold standards probably have soft transitions.
+- **Final intent vocabulary**: 7 intents above is the starting set; needs
+  validation against more reference tracks (Mistress And Box, A Sinful
+  XXX-perience, others).
+- **Auto-detect chapter boundaries**: candidates for v0.0.5 are
+  `librosa.segment.agglomerative` and `librosa.segment.recurrence_matrix`.
+- **Funscript chapter metadata format**: align with whatever the broader
+  community uses if there's a convention; otherwise the layout above.
+
+## Validation strategy
+
+For each gold-standard track:
+
+1. **Find apparent chapter boundaries** — time points where avg amplitude /
+   velocity / density shift significantly. Cluster of changes = boundary.
+2. **Read intent off each segment** — rising amplitude → build; sustained
+   high → edge; peak burst → climax; decline → recover.
+3. **Compare** the human-segmented chapter intent labels against what the
+   data classifier produces.
+
+The hand-crafted curves carry their structural decisions in their statistics;
+the work is reading them out.
+
+## Cross-references
+
+- v0.0.4 spec (private memory): forgegen_v004_spec
+- ForgePlayer chapter integration: forgeplayer_chapters_forgegen
+- Canonical-emit principle: forgegen_canonical_emit (chapters fit naturally
+  — emit canonical chapter metadata, transforms downstream)

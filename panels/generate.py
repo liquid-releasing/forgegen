@@ -234,6 +234,47 @@ def render() -> None:
         st.session_state.modes = classify_modes(bm)
     modes = st.session_state.modes
 
+    _TONE_TRAJECTORIES = {
+        "flat": None,           # constant center
+        "rise": (30, 70),       # bottom-heavy \u2192 top-heavy
+        "fall": (70, 30),       # top-heavy \u2192 bottom-heavy
+    }
+
+    def _generate_and_export() -> None:
+        """Build the funscript curve from current session_state and stash bytes.
+
+        Reused by the Generate button, style-card clicks (when source didn't
+        change), the density toggle, and the tone selector \u2014 so a single
+        click switches and regenerates without forcing a separate Generate.
+        """
+        traj = _TONE_TRAJECTORIES.get(st.session_state.tone)
+        curve = beats_to_curve(
+            bm,
+            low=st.session_state.low,
+            high=st.session_state.high,
+            center=st.session_state.center,
+            center_trajectory=traj,
+            energy_normalize=True,
+            stroke_density=st.session_state.stroke_density,
+        )
+        shaped = shape_curve(
+            curve,
+            modes,
+            low=st.session_state.low,
+            center=st.session_state.center,
+            center_trajectory=traj,
+        )
+        st.session_state.curve = shaped
+
+        with tempfile.NamedTemporaryFile(suffix=".funscript", delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+        try:
+            title = Path(st.session_state.audio_name).stem
+            export_funscript(shaped, tmp_path, title=title)
+            st.session_state.funscript_bytes = tmp_path.read_bytes()
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
     # Energy chart + phrase-mode legend already render in app.py's Analysis
     # panel above the tabs \u2014 don't render them here too, identical
     # plotly_chart params would collide on Streamlit's auto-generated ID.
@@ -274,11 +315,73 @@ def render() -> None:
                 st.session_state.analysis_pending = (_path, _name, False)
                 st.session_state.analysis_log = []
                 st.session_state.last_error = None
+            else:
+                # Same source — beat_map still valid. Auto-regenerate so the
+                # new range/density takes effect without a separate Generate
+                # click. Was the workflow gap that made all four style outputs
+                # appear identical: clicking style without re-clicking Generate.
+                _generate_and_export()
             st.rerun()
 
     # Show active style description
     active = _STYLES[st.session_state.style]
     st.caption(active["desc"])
+
+    # -----------------------------------------------------------------------
+    # Stroke density toggle — half = sensual / longer cycle, full = PD-style
+    # -----------------------------------------------------------------------
+
+    st.markdown("**Stroke density**")
+    st.caption(
+        "Full = one full stroke per beat (canonical, matches PythonDancer / "
+        "your hand-crafted curves). Half = preview of what FunscriptForge's "
+        "halve transform would produce — quicker A/B without round-tripping."
+    )
+    _density_idx = 1 if st.session_state.stroke_density == "half" else 0
+    _density_choice = st.radio(
+        "stroke density",
+        options=["Full — one stroke per beat",
+                 "Half — preview FunscriptForge halve transform"],
+        index=_density_idx,
+        label_visibility="collapsed",
+        horizontal=True,
+        key="density_radio",
+    )
+    _new_density = "half" if _density_choice.startswith("Half") else "full"
+    if _new_density != st.session_state.stroke_density:
+        st.session_state.stroke_density = _new_density
+        _generate_and_export()
+        st.rerun()
+
+    # -----------------------------------------------------------------------
+    # Tone — whole-shape gestalt (drives the curve's macro arc)
+    # -----------------------------------------------------------------------
+
+    st.markdown("**Tone**")
+    st.caption(
+        "Style sets the local knobs (range, density, source). Tone shapes "
+        "the *whole* arc — where the curve sits across the full track. "
+        "Flat = constant 50. Rise = builds upward over time (30→70). "
+        "Fall = relaxes downward (70→30)."
+    )
+    _tone_options = ["Flat — constant center",
+                     "Rise — center drifts up over track",
+                     "Fall — center drifts down over track"]
+    _tone_keys = ["flat", "rise", "fall"]
+    _tone_idx = _tone_keys.index(st.session_state.tone) if st.session_state.tone in _tone_keys else 0
+    _tone_choice = st.radio(
+        "tone",
+        options=_tone_options,
+        index=_tone_idx,
+        label_visibility="collapsed",
+        horizontal=True,
+        key="tone_radio",
+    )
+    _new_tone = _tone_keys[_tone_options.index(_tone_choice)]
+    if _new_tone != st.session_state.tone:
+        st.session_state.tone = _new_tone
+        _generate_and_export()
+        st.rerun()
 
     st.divider()
 
@@ -288,29 +391,7 @@ def render() -> None:
 
     if st.button("▶ Generate", type="primary", width="stretch"):
         with st.spinner("Generating funscript…"):
-            curve = beats_to_curve(
-                bm,
-                low=st.session_state.low,
-                high=st.session_state.high,
-                center=st.session_state.center,
-            )
-            shaped = shape_curve(
-                curve,
-                modes,
-                low=st.session_state.low,
-                center=st.session_state.center,
-            )
-            st.session_state.curve = shaped
-
-            # Build funscript bytes in memory via temp file
-            with tempfile.NamedTemporaryFile(suffix=".funscript", delete=False) as tmp:
-                tmp_path = Path(tmp.name)
-            try:
-                title = Path(st.session_state.audio_name).stem
-                export_funscript(shaped, tmp_path, title=title)
-                st.session_state.funscript_bytes = tmp_path.read_bytes()
-            finally:
-                tmp_path.unlink(missing_ok=True)
+            _generate_and_export()
 
     # -----------------------------------------------------------------------
     # Funscript preview + download
