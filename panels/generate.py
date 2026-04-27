@@ -61,29 +61,151 @@ _MODE_COLOURS: dict[str, str] = {
 # Chart helpers
 # ---------------------------------------------------------------------------
 
-def _energy_chart(beat_map, modes):
-    """Bar chart of beat energy, coloured by phrase mode."""
-    import plotly.graph_objects as go
+_ENERGY_CHART_MAX_BARS = 800
+_PHRASE_VLINE_MAX = 120
+_ENERGY_PNG_THRESHOLD = 1500  # beats above which we skip Plotly entirely
 
-    # Build a colour per beat based on its phrase mode
+
+def _energy_chart_png(beat_map, modes, *, width_px: int = 1400, height_px: int = 160) -> bytes:
+    """Static-PNG energy chart for long tracks (FunscriptForge pattern).
+
+    Plotly's Bar trace falls over on >1,000 data points in Streamlit:
+    each rerun re-serialises the whole figure to JSON and the browser
+    re-paints the SVG node tree. On a 26K-beat / 2-hour track that
+    pushes paint time into the tens of seconds and freezes the page
+    while you click strip thumbnails.
+
+    Matplotlib drawing the same data to a PNG sidesteps both costs —
+    same visual result, paints in 100-200ms, doesn't choke Streamlit.
+    Same trade-off FunscriptForge made when its Plotly charts brought
+    the page to its knees on long curves.
+    """
+    import io
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
     def _mode_for(t):
         for start, end, mode in modes:
             if start <= t < end:
                 return mode
         return "steady"
 
-    colours = [_MODE_COLOURS.get(_mode_for(b), "#26a69a") for b in beat_map.beats]
+    n = len(beat_map.beats)
+    bins = min(_ENERGY_CHART_MAX_BARS, n)
+    chunk = max(1, (n + bins - 1) // bins)
+
+    xs, ys, cs = [], [], []
+    for i in range(0, n, chunk):
+        seg_b = beat_map.beats[i:i + chunk]
+        seg_e = beat_map.energy[i:i + chunk]
+        if not seg_b:
+            continue
+        mid_ms = seg_b[len(seg_b) // 2]
+        xs.append(mid_ms / 1000)
+        ys.append(max(seg_e))
+        cs.append(_MODE_COLOURS.get(_mode_for(mid_ms), "#26a69a"))
+
+    fig, ax = plt.subplots(
+        figsize=(width_px / 100, height_px / 100), dpi=100
+    )
+    fig.patch.set_facecolor("#0e1117")
+    ax.set_facecolor("#1a1d23")
+
+    if xs:
+        # Bar widths roughly match the per-bin time span so bars fill
+        # the axis without gaps on long tracks.
+        bar_w = (xs[-1] - xs[0]) / max(1, len(xs)) if len(xs) > 1 else 0.5
+        ax.bar(xs, ys, width=bar_w, color=cs, linewidth=0)
+
+        # Phrase boundary tick marks — capped to avoid visual noise.
+        phrases = beat_map.phrases
+        if len(phrases) > _PHRASE_VLINE_MAX:
+            step = (len(phrases) + _PHRASE_VLINE_MAX - 1) // _PHRASE_VLINE_MAX
+            phrases = phrases[::step]
+        for start_ms, _end_ms in phrases:
+            ax.axvline(
+                start_ms / 1000,
+                color="#ffffff",
+                alpha=0.18,
+                linewidth=0.6,
+                linestyle=":",
+            )
+
+    ax.set_xlim(left=0, right=(beat_map.duration_ms / 1000) or 1)
+    ax.set_ylim(0, 1.0)
+    ax.set_ylabel("energy", color="#cccccc", fontsize=8)
+    ax.tick_params(colors="#cccccc", labelsize=7)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["bottom"].set_color("#2a2d33")
+    ax.spines["left"].set_color("#2a2d33")
+
+    # Format x-axis as M:SS for readability
+    def _fmt(x, _pos):
+        m, s = divmod(int(x), 60)
+        return f"{m}:{s:02d}"
+    ax.xaxis.set_major_formatter(plt.FuncFormatter(_fmt))
+
+    buf = io.BytesIO()
+    fig.savefig(
+        buf, format="png",
+        bbox_inches="tight", pad_inches=0.1,
+        facecolor=fig.get_facecolor(),
+    )
+    plt.close(fig)
+    return buf.getvalue()
+
+
+def _energy_chart(beat_map, modes):
+    """Bar chart of beat energy, coloured by phrase mode (Plotly).
+
+    Used for short/medium tracks where Plotly's interactivity (hover
+    tooltips, etc.) is worth the paint cost. Long tracks should call
+    :func:`_energy_chart_png` instead — same visual, ~10× faster paint.
+    """
+    import plotly.graph_objects as go
+
+    def _mode_for(t):
+        for start, end, mode in modes:
+            if start <= t < end:
+                return mode
+        return "steady"
+
+    n = len(beat_map.beats)
+    if n <= _ENERGY_CHART_MAX_BARS:
+        x_vals = [b / 1000 for b in beat_map.beats]
+        y_vals = list(beat_map.energy)
+        colours = [
+            _MODE_COLOURS.get(_mode_for(b), "#26a69a") for b in beat_map.beats
+        ]
+    else:
+        bins = _ENERGY_CHART_MAX_BARS
+        chunk = (n + bins - 1) // bins
+        x_vals, y_vals, colours = [], [], []
+        for i in range(0, n, chunk):
+            seg_b = beat_map.beats[i:i + chunk]
+            seg_e = beat_map.energy[i:i + chunk]
+            if not seg_b:
+                continue
+            mid_ms = seg_b[len(seg_b) // 2]
+            x_vals.append(mid_ms / 1000)
+            y_vals.append(max(seg_e))
+            colours.append(_MODE_COLOURS.get(_mode_for(mid_ms), "#26a69a"))
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
-        x=[b / 1000 for b in beat_map.beats],
-        y=beat_map.energy,
+        x=x_vals,
+        y=y_vals,
         marker_color=colours,
         hovertemplate="<b>%{x:.2f}s</b><br>energy: %{y:.3f}<extra></extra>",
     ))
 
-    # Phrase boundary lines
-    for start_ms, end_ms in beat_map.phrases:
+    phrases = beat_map.phrases
+    if len(phrases) > _PHRASE_VLINE_MAX:
+        step = (len(phrases) + _PHRASE_VLINE_MAX - 1) // _PHRASE_VLINE_MAX
+        phrases = phrases[::step]
+    for start_ms, _end_ms in phrases:
         fig.add_vline(
             x=start_ms / 1000,
             line_width=1,

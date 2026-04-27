@@ -341,13 +341,28 @@ if st.session_state.analysis_pending is not None:
         expanded=True,
     ) as status:
         status.write(f"🕒 Started at {_start_hms}")
-        status.write("📂 Loading audio + extracting waveform (may take a minute for video files)…")
+        _stage_holder = status.empty()
+        _stage_holder.write(
+            "📂 Preparing… (large video files take several minutes)"
+        )
         _log(f"Starting analyze_beats(source={st.session_state.source})")
+
+        def _on_stage(label: str) -> None:
+            # videoflow calls this at the start of each pipeline stage.
+            # We update a single placeholder line so the user sees what's
+            # happening live (instead of one opaque "Loading…" message
+            # for the full 8-minute pipeline). Elapsed seconds shown so
+            # the user knows the process is alive.
+            _e = _time.time() - _start_t
+            _stage_holder.write(f"⚙️ {label}  (elapsed {_e:.0f}s)")
+            _log(label)
+
         try:
             from videoflow.audio import BeatError, analyze_beats
             beat_map = analyze_beats(
                 media_path,
                 source=st.session_state.source,
+                progress_callback=_on_stage,
             )
             elapsed = _time.time() - _start_t
             st.session_state.beat_map = beat_map
@@ -429,13 +444,26 @@ else:
     # softer" — that softness is visible on BOTH charts at the same x
     # position, so stacking them lets the eye link "low audio energy"
     # to "calm haptic intensity" at a glance.
-    from panels.generate import _energy_chart, _MODE_COLOURS
-    st.caption("Beat energy — coloured by phrase mode")
-    st.plotly_chart(
-        _energy_chart(bm, st.session_state.modes),
-        width="stretch",
-        config={"displayModeBar": False},
+    from panels.generate import (
+        _energy_chart,
+        _energy_chart_png,
+        _ENERGY_PNG_THRESHOLD,
+        _MODE_COLOURS,
     )
+    st.caption("Beat energy — coloured by phrase mode")
+    if len(bm.beats) > _ENERGY_PNG_THRESHOLD:
+        # Long track — render as static PNG so Streamlit can paint
+        # without re-serialising a 26K-bar Plotly figure on every rerun.
+        st.image(
+            _energy_chart_png(bm, st.session_state.modes),
+            use_container_width=True,
+        )
+    else:
+        st.plotly_chart(
+            _energy_chart(bm, st.session_state.modes),
+            width="stretch",
+            config={"displayModeBar": False},
+        )
 
     # Funscript intensity strip — only after Generate has produced one.
     # Rendered directly under the energy chart so the two are visually

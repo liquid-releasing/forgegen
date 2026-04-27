@@ -57,6 +57,10 @@ def _build_rows(bm, modes) -> list[dict]:
     return rows
 
 
+_PHRASE_TABLE_MAX_ROWS = 60   # cap rows to keep page paint snappy
+_TABLE_VIEWPORT_MAX_PX = 600  # never let the dataframe widget exceed this
+
+
 def render_phrase_table(
     bm,
     modes,
@@ -97,38 +101,48 @@ def render_phrase_table(
     _row_h = 35  # measured st.dataframe row height in dark theme
     _header_h = 38
 
-    if len(rows) <= split_threshold:
-        df = pd.DataFrame(rows)
+    # Long-track guard: cap visible rows so a 2-hour track at 16-beat
+    # phrases (1,652 phrases) doesn't paint a 60K-pixel-tall scroll
+    # column. Honest tradeoff: the user only sees the first
+    # _PHRASE_TABLE_MAX_ROWS phrases, with a caption explaining the
+    # truncation. v0.0.5 chapters resolve this — chapters are 8-30
+    # rows max even on a 4-hour film.
+    total_rows = len(rows)
+    truncated = total_rows > _PHRASE_TABLE_MAX_ROWS
+    if truncated:
+        rows = rows[:_PHRASE_TABLE_MAX_ROWS]
+
+    def _render_one(df, key_suffix=""):
+        h = min(
+            _TABLE_VIEWPORT_MAX_PX,
+            _header_h + _row_h * len(df),
+        )
         st.dataframe(
             df.style.apply(_row_colour, axis=1),
             width="stretch",
             hide_index=True,
-            height=_header_h + _row_h * len(rows),
-            key=f"{key_prefix}phrase_table" if key_prefix else None,
+            height=h,
+            key=(
+                f"{key_prefix}phrase_table{key_suffix}"
+                if key_prefix else None
+            ),
         )
-        return
 
-    # Split roughly in half — left column gets the first half, right
-    # gets the rest. Eyes scan left→down→right.
-    mid = (len(rows) + 1) // 2
-    df_left = pd.DataFrame(rows[:mid])
-    df_right = pd.DataFrame(rows[mid:])
+    if len(rows) <= split_threshold:
+        _render_one(pd.DataFrame(rows))
+    else:
+        # Split roughly in half — left column first, right column next.
+        mid = (len(rows) + 1) // 2
+        col_l, col_r = st.columns(2)
+        with col_l:
+            _render_one(pd.DataFrame(rows[:mid]), key_suffix="_left")
+        with col_r:
+            _render_one(pd.DataFrame(rows[mid:]), key_suffix="_right")
 
-    # Both columns share a height so the bottom edges align.
-    _table_h = _header_h + _row_h * mid
-
-    col_l, col_r = st.columns(2)
-    col_l.dataframe(
-        df_left.style.apply(_row_colour, axis=1),
-        width="stretch",
-        hide_index=True,
-        height=_table_h,
-        key=f"{key_prefix}phrase_table_left" if key_prefix else None,
-    )
-    col_r.dataframe(
-        df_right.style.apply(_row_colour, axis=1),
-        width="stretch",
-        hide_index=True,
-        height=_table_h,
-        key=f"{key_prefix}phrase_table_right" if key_prefix else None,
-    )
+    if truncated:
+        st.caption(
+            f"Showing first {_PHRASE_TABLE_MAX_ROWS} of {total_rows} "
+            f"phrases. v0.0.5 chapter intent will replace this 16-beat "
+            f"phrase grid with chapter-scale rows (typically 8–30 even "
+            f"on multi-hour tracks)."
+        )
