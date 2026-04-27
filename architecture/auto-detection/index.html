@@ -1,0 +1,1552 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Audio and video to funscript — generation engine for haptic content">
+      
+      
+        <meta name="author" content="Xolvco">
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Auto-Detection — What We Can Detect, With What Confidence - forgegen</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#auto-detection-what-we-can-detect-with-what-confidence" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="forgegen" class="md-header__button md-logo" aria-label="forgegen" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            forgegen
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Auto-Detection — What We Can Detect, With What Confidence
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../installation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../quick-start/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quick Start
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../ui/" class="md-tabs__link">
+          
+  
+  
+  Using the UI
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/styles/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../cli/" class="md-tabs__link">
+          
+  
+  
+  CLI & Automation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../workflow/fsf-handoff/" class="md-tabs__link">
+          
+  
+  
+  Workflow
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="forgegen" class="md-nav__button md-logo" aria-label="forgegen" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    forgegen
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using the UI
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Using the UI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/generate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generate Tab
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/details/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Details Tab
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/styles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Styles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phrase Modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Formats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI & Automation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    CLI & Automation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/automation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workflow/fsf-handoff/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    forgegen + FunScriptForge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#design-pattern-propose-with-confidence-human-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design pattern: propose with confidence + human review
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#audio-only-chapter-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Audio-only chapter detection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Audio-only chapter detection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#algorithms-available-in-librosa-today" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Algorithms (available in librosa today)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-audio-only-is-strong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where audio-only is strong
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-audio-only-is-weak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where audio-only is weak
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expected-accuracy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected accuracy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#video-only-chapter-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Video-only chapter detection
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Video-only chapter detection">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#signals-ordered-by-ease" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signals, ordered by ease
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#black-frames-as-chapter-markers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Black frames as chapter markers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-video-only-is-strong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where video-only is strong
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-video-only-is-weak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where video-only is weak
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expected-accuracy_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected accuracy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#audio-video-co-detection-the-strongest-signal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Audio + video co-detection (the strongest signal)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Audio + video co-detection (the strongest signal)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-agreement-principle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The agreement principle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expected-accuracy_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expected accuracy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confidence-trajectory-across-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confidence trajectory across versions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-auto-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event auto-detection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-architecture-insists-on-human-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the architecture insists on human review
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#honest-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Honest summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-references
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="auto-detection-what-we-can-detect-with-what-confidence">Auto-Detection — What We Can Detect, With What Confidence<a class="headerlink" href="#auto-detection-what-we-can-detect-with-what-confidence" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>What forgegen can derive automatically from audio and video, where
+the algorithms are reliable, where they fail, and how the design
+embraces partial automation with human review.</p>
+<p>Honest accounting matters: the architecture so far describes <em>what
+we'll do</em>; this doc describes <em>how reliably we expect it to work</em>.</p>
+</blockquote>
+<h2 id="design-pattern-propose-with-confidence-human-review">Design pattern: propose with confidence + human review<a class="headerlink" href="#design-pattern-propose-with-confidence-human-review" title="Permanent link">&para;</a></h2>
+<p>forgegen's auto-detection is <strong>never authoritative on its own</strong>. It
+produces <em>proposals</em> with <em>confidence scores</em>. Downstream tooling
+(forgevents, FF Pro) presents proposals to the artist who accepts /
+adjusts / rejects.</p>
+<p>This pattern is non-negotiable for long-form work. A 90-minute track
+can't be trusted to fully automatic output even at 95% accuracy — that's
+~5 minutes of wrong decisions. The design choice is to make review
+<em>fast</em> (high-confidence proposals are one-keystroke confirms; only
+low-confidence ones need real attention).</p>
+<p>The analysis schema reserves explicit confidence fields:</p>
+<ul>
+<li><code>chapter_proposals[i].confidence</code> — 0–1</li>
+<li><code>event_proposals[i].confidence</code> — 0–1</li>
+<li><code>structural.audio_video_alignment.boundary_agreement_score</code> — 0–1</li>
+</ul>
+<p>forgevents UI uses these to:</p>
+<ul>
+<li><strong>Pre-accept</strong> high-confidence proposals (&gt;0.9) — visible but not flagged</li>
+<li><strong>Flag for review</strong> medium-confidence proposals (0.6–0.9)</li>
+<li><strong>Hide unless requested</strong> low-confidence proposals (&lt;0.6) — too noisy to surface by default</li>
+</ul>
+<h2 id="audio-only-chapter-detection">Audio-only chapter detection<a class="headerlink" href="#audio-only-chapter-detection" title="Permanent link">&para;</a></h2>
+<h3 id="algorithms-available-in-librosa-today">Algorithms (available in librosa today)<a class="headerlink" href="#algorithms-available-in-librosa-today" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>What it does</th>
+<th>When it works</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>librosa.segment.agglomerative</code></td>
+<td>Hierarchical segmentation; returns boundaries at multiple time scales</td>
+<td>Music with clear sectional structure</td>
+</tr>
+<tr>
+<td><code>librosa.segment.recurrence_matrix</code> + diagonal smoothing</td>
+<td>Self-similarity-based segmentation</td>
+<td>Music with repeating sections</td>
+</tr>
+<tr>
+<td>Phrase-aggregation heuristic</td>
+<td>Group adjacent phrases by character / mode similarity</td>
+<td>Heuristic for long-form, drone-heavy content</td>
+</tr>
+<tr>
+<td>Energy-contour thresholds</td>
+<td>Detect big energy drops as boundaries</td>
+<td>Clear dynamic shifts</td>
+</tr>
+</tbody>
+</table>
+<h3 id="where-audio-only-is-strong">Where audio-only is strong<a class="headerlink" href="#where-audio-only-is-strong" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Pop / EDM / dance with clear verse / chorus / bridge structure</li>
+<li>Music with explicit transitions (key changes, drops, builds)</li>
+<li>Tracks where energy contour visibly shifts at section boundaries</li>
+</ul>
+<h3 id="where-audio-only-is-weak">Where audio-only is weak<a class="headerlink" href="#where-audio-only-is-weak" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Drone-heavy or homogeneous sections</strong> — the music doesn't shift,
+  but the artist may still want a narrative chapter break (RoD has
+  long passages where audio doesn't help)</li>
+<li><strong>Continuous-mood tracks</strong> — an entire 90-minute set at the same
+  energy / character; no audio signal for boundaries</li>
+<li><strong>Tracks with long continuous build</strong> — auto-detect sees one long
+  phrase; artist may want to subdivide</li>
+</ul>
+<h3 id="expected-accuracy">Expected accuracy<a class="headerlink" href="#expected-accuracy" title="Permanent link">&para;</a></h3>
+<p><strong>60–80% useful proposals</strong> for typical tracks. The remaining
+20–40% need human boundary placement.</p>
+<h2 id="video-only-chapter-detection">Video-only chapter detection<a class="headerlink" href="#video-only-chapter-detection" title="Permanent link">&para;</a></h2>
+<h3 id="signals-ordered-by-ease">Signals, ordered by ease<a class="headerlink" href="#signals-ordered-by-ease" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Implementation</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hard cuts</td>
+<td>PySceneDetect — frame-to-frame histogram delta</td>
+<td>one library call</td>
+</tr>
+<tr>
+<td>Black frames / fades</td>
+<td>brightness threshold + variance</td>
+<td>trivial</td>
+</tr>
+<tr>
+<td>Significant scenery change</td>
+<td>colour histogram shift over windows</td>
+<td>easy</td>
+</tr>
+<tr>
+<td>Cut density windows</td>
+<td>derivable from PySceneDetect output</td>
+<td>easy</td>
+</tr>
+<tr>
+<td>Camera motion changes</td>
+<td>optical flow vector classification</td>
+<td>moderate</td>
+</tr>
+<tr>
+<td>Scene-type classification</td>
+<td>scene-classification CNN (Places365)</td>
+<td>future, model bundle</td>
+</tr>
+<tr>
+<td>Object / pose changes</td>
+<td>YOLO / pose models</td>
+<td>future</td>
+</tr>
+</tbody>
+</table>
+<h3 id="black-frames-as-chapter-markers">Black frames as chapter markers<a class="headerlink" href="#black-frames-as-chapter-markers" title="Permanent link">&para;</a></h3>
+<p>Many edited videos use fade-to-black between sections — an explicit
+chapter marker the editor <em>already placed</em>. Detection: brightness +
+colour variance both below threshold for ≥250 ms. <strong>High-confidence
+boundary signal.</strong> Should be treated as ~0.95 confidence.</p>
+<h3 id="where-video-only-is-strong">Where video-only is strong<a class="headerlink" href="#where-video-only-is-strong" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Cut-driven edited content (most pro-level material)</li>
+<li>Content with explicit fade transitions</li>
+<li>Content with clear scenery shifts</li>
+</ul>
+<h3 id="where-video-only-is-weak">Where video-only is weak<a class="headerlink" href="#where-video-only-is-weak" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Single-take or sparse-cut content</li>
+<li>Continuous performance footage (one camera angle for minutes)</li>
+<li>Stylised content where cuts don't correspond to narrative shifts</li>
+</ul>
+<h3 id="expected-accuracy_1">Expected accuracy<a class="headerlink" href="#expected-accuracy_1" title="Permanent link">&para;</a></h3>
+<p><strong>70–85% useful proposals on typical edited content</strong>, lower on
+long-take or single-camera material.</p>
+<h2 id="audio-video-co-detection-the-strongest-signal">Audio + video co-detection (the strongest signal)<a class="headerlink" href="#audio-video-co-detection-the-strongest-signal" title="Permanent link">&para;</a></h2>
+<h3 id="the-agreement-principle">The agreement principle<a class="headerlink" href="#the-agreement-principle" title="Permanent link">&para;</a></h3>
+<p>When an audio boundary aligns with a video boundary within a few
+seconds, confidence multiplies. When they disagree, the boundary is
+weaker — likely modality-specific.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Audio boundary at 90.0s + video cut at 89.7s  → CHAPTER BOUNDARY (confidence 0.95)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Audio boundary at 480s, no nearby video event → music-driven chapter (confidence 0.65)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Video cut at 600s, no nearby audio event      → visual-only marker  (confidence 0.55)
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Both agree at multiple consecutive boundaries → tight section structure → high overall confidence
+</code></pre></div>
+<h3 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Permanent link">&para;</a></h3>
+<p>For each candidate boundary from either modality:</p>
+<ol>
+<li>Find the nearest boundary in the other modality</li>
+<li>Compute time delta</li>
+<li>If delta &lt; 2.5s → agreement → confidence ≥ 0.85</li>
+<li>If delta 2.5–10s → partial alignment → confidence 0.65–0.85</li>
+<li>If no nearby boundary → modality-specific → confidence 0.5–0.65</li>
+</ol>
+<h3 id="expected-accuracy_2">Expected accuracy<a class="headerlink" href="#expected-accuracy_2" title="Permanent link">&para;</a></h3>
+<p><strong>80–90% useful proposals on cut-driven content</strong> with both modalities
+present. The remaining 10–20% are typically narrative-only chapter
+breaks the artist wants for reasons not present in either signal.</p>
+<h2 id="confidence-trajectory-across-versions">Confidence trajectory across versions<a class="headerlink" href="#confidence-trajectory-across-versions" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Boundary accuracy</th>
+<th>Required human work</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v0.0.5 (audio only)</td>
+<td>~60–80%</td>
+<td>Review 20–40% of proposals</td>
+</tr>
+<tr>
+<td>v0.0.6 (audio + video co-detection)</td>
+<td>~80–90%</td>
+<td>Review 10–20%</td>
+</tr>
+<tr>
+<td>v0.0.7+ (corpus-trained refinements)</td>
+<td>~85–95% on tracks similar to corpus</td>
+<td>Review 5–15%, mostly low-confidence cases</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Even at 95% there's still review.</strong> The architecture must support
+review-as-a-first-class workflow at every stage.</p>
+<h2 id="event-auto-detection">Event auto-detection<a class="headerlink" href="#event-auto-detection" title="Permanent link">&para;</a></h2>
+<p>Events are <em>easier</em> to auto-detect than chapters — they're sparse,
+moment-anchored, and tied to specific signals. But they're <em>harder</em>
+to place precisely (millisecond accuracy required).</p>
+<table>
+<thead>
+<tr>
+<th>Event type</th>
+<th>Primary signal</th>
+<th>Expected confidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accent</code></td>
+<td>Sub-beat onset peak</td>
+<td>0.8–0.95 (easy to find, easy to place)</td>
+</tr>
+<tr>
+<td><code>edge_hold</code></td>
+<td>Sustained-energy peak (3+ seconds at high energy)</td>
+<td>0.6–0.85 (signal is there but boundaries are fuzzy)</td>
+</tr>
+<tr>
+<td><code>vocal_cue</code></td>
+<td>Vocal energy + pitch detection</td>
+<td>0.4–0.75 (harder — easy false positives without speech models)</td>
+</tr>
+<tr>
+<td><code>climax_candidate</code></td>
+<td>Audio peak + video peak + tight-cut window co-occurrence</td>
+<td>0.7–0.95 when modalities agree</td>
+</tr>
+<tr>
+<td><code>scene_accent</code></td>
+<td>PySceneDetect cut</td>
+<td>0.9–0.95 (mostly placement is exact)</td>
+</tr>
+<tr>
+<td><code>tight_cut_zone</code></td>
+<td>Cut density &gt; threshold over window</td>
+<td>0.85–0.95 (clear signal)</td>
+</tr>
+</tbody>
+</table>
+<p>Vocal cues are the weakest auto-finder — distinguishing a sigh from a
+breath from a moan needs speech models that aren't currently bundled.
+<strong>v0.0.5 likely emits <code>vocal_cue</code> only with low confidence</strong>;
+v0.0.7+ adds bundled audio classifiers and confidence rises.</p>
+<h2 id="where-the-architecture-insists-on-human-review">Where the architecture insists on human review<a class="headerlink" href="#where-the-architecture-insists-on-human-review" title="Permanent link">&para;</a></h2>
+<p>Some decisions can't be automated even at 95% accuracy:</p>
+<ul>
+<li><strong>Chapter intent labels</strong> — "is this section a build or an edge?" depends
+  on artist intent, not measurable signal. Auto can <em>propose</em> (with
+  weak confidence) but the artist <em>decides</em>.</li>
+<li><strong>Climax timing</strong> — the algorithm can detect candidate peaks, but
+  <em>which</em> peak is THE climax of the piece is a narrative decision.</li>
+<li><strong>Event types where multiple are plausible</strong> — an audio + video peak
+  might be a climax, an accent, or a vocal cue depending on what's
+  there. Auto labels with most-likely + confidence.</li>
+<li><strong>Tease / pause markers</strong> — entirely human-authored; no audio /
+  video signal proposes them.</li>
+</ul>
+<p>Per <code>feedback_forgegen_floor_and_ceiling.md</code>, the floor (auto-default)
+must produce <em>useful</em> output without human input; the ceiling (vision-led
+artist) keeps full control to override anything.</p>
+<h2 id="honest-summary">Honest summary<a class="headerlink" href="#honest-summary" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p><em>Yes, we can auto-detect chapters and events from audio + video.
+The first cut won't be perfect, but it will be useful — proposals
++ confidence scores + human review is the design.</em></p>
+</blockquote>
+<p>The architecture isn't <em>"replace the artist"</em> — it's <em>"make the
+artist's job 10× faster while keeping their artistic control complete."</em></p>
+<h2 id="cross-references">Cross-references<a class="headerlink" href="#cross-references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Analysis layers (the conceptual model): <code>analysis-layers.md</code></li>
+<li>Analysis schema (the persistence format): <code>analysis-schema.md</code></li>
+<li>Chapters vs events (granularity differences): <code>chapters-vs-events.md</code></li>
+<li>Floor + Ceiling product positioning (private memory): <code>feedback_forgegen_floor_and_ceiling.md</code></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

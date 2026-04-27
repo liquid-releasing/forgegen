@@ -1,0 +1,1713 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Audio and video to funscript — generation engine for haptic content">
+      
+      
+        <meta name="author" content="Xolvco">
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Analysis JSON Schema (v1.0 working spec) - forgegen</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#analysis-json-schema-v10-working-spec" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="forgegen" class="md-header__button md-logo" aria-label="forgegen" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            forgegen
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Analysis JSON Schema (v1.0 working spec)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../installation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../quick-start/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quick Start
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../ui/" class="md-tabs__link">
+          
+  
+  
+  Using the UI
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/styles/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../cli/" class="md-tabs__link">
+          
+  
+  
+  CLI & Automation
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../workflow/fsf-handoff/" class="md-tabs__link">
+          
+  
+  
+  Workflow
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="forgegen" class="md-nav__button md-logo" aria-label="forgegen" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    forgegen
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using the UI
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Using the UI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/generate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generate Tab
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ui/details/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Details Tab
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/styles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Styles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Phrase Modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Formats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI & Automation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    CLI & Automation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/automation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../workflow/fsf-handoff/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    forgegen + FunScriptForge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#design-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-naming-storage-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File naming + storage conventions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File naming + storage conventions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#canonical-placement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Canonical placement
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optional-embed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optional embed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#top-level-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Top-level structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-string-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        version (string, required)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generated_by-object-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generated_by (object, required)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-object-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        source (object, required)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#audio_features-object-required-for-audio-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        audio_features (object, required for audio sources)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="audio_features (object, required for audio sources)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layer-1-audio-features-all-time-series-arrays-are-aligned-to-beats-unless-noted-values-that-vary-continuously-envelope-contour-are-sampled-at-a-fixed-sample_period_ms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 1 audio features. All time-series arrays are aligned to beats unless noted; values that vary continuously (envelope, contour) are sampled at a fixed sample_period_ms.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#video_features-object-optional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        video_features (object, optional)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="video_features (object, optional)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layer-1-video-features-present-when-source-has-video" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 1 video features. Present when source has video.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structural-object-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        structural (object, required)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="structural (object, required)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layer-2-inferences-derived-from-layer-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 2 inferences derived from Layer 1.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event_proposals-array-required-possibly-empty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        event_proposals (array, required, possibly empty)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="event_proposals (array, required, possibly empty)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layer-3-auto-detected-events-for-human-curation-in-forgevents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 3 — auto-detected events for human curation in forgevents.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generation_choices-object-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generation_choices (object, required)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#versioning-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versioning rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation rules
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-references
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="analysis-json-schema-v10-working-spec">Analysis JSON Schema (v1.0 working spec)<a class="headerlink" href="#analysis-json-schema-v10-working-spec" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>The canonical persistent analysis artifact emitted by forgegen and
+consumed by every other tool in the family. Per the analysis-layers
+doc, this is <em>canonical-emit applied one level up</em> — the same data
+moves through the pipeline rather than being recomputed at each stage.</p>
+<p>Status: working spec. Field shapes are subject to refinement during
+v0.0.4 (audio + structural skeleton) and v0.0.5 (chapter intent +
+event vocabulary) implementation. Versioning rules below describe
+how we evolve the schema without breaking downstream consumers.</p>
+</blockquote>
+<h2 id="design-principles">Design principles<a class="headerlink" href="#design-principles" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Single source of truth</strong> — every analysis-derived value (beats,
+   phrases, candidate events) lives here, not duplicated across tools.</li>
+<li><strong>Versioned</strong> — schema has a <code>version</code> field; tools declare what
+   they support; backwards-compatible additions don't bump the version.</li>
+<li><strong>Self-contained</strong> — sufficient to reproduce / validate the
+   downstream funscript without re-running expensive analysis.</li>
+<li><strong>Streaming-friendly</strong> — large arrays (per-beat features) sit at
+   leaf positions so partial parses are cheap; downstream tools can
+   skip sections they don't need.</li>
+<li><strong>Inspectable</strong> — every value has a documented unit; ambiguous
+   numbers are forbidden.</li>
+<li><strong>Consumers declared</strong> — each section documents which tools read
+   it, so changes are scoped.</li>
+</ol>
+<h2 id="file-naming-storage-conventions">File naming + storage conventions<a class="headerlink" href="#file-naming-storage-conventions" title="Permanent link">&para;</a></h2>
+<h3 id="canonical-placement">Canonical placement<a class="headerlink" href="#canonical-placement" title="Permanent link">&para;</a></h3>
+<p>For a track at <code>path/to/track.mp4</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>path/to/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── track.mp4              ← source video
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├── track.funscript        ← Layer 4 (curve)
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>├── track.analysis.json    ← THIS schema (Layers 1–3)
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>└── track.events.yaml      ← Layer 3 finalised (after forgevents)
+</code></pre></div>
+<p>The <code>.analysis.json</code> is the <strong>proposals + raw features</strong> artifact —
+auto-derived by forgegen. The <code>.events.yaml</code> is the <strong>finalised
+events</strong> after human curation in forgevents.</p>
+<p>For tracks already in a <code>.forge/</code> directory layout (used by forge family):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>.forge/
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>└── 0/
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    ├── 0.mp4
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    ├── 0.funscript
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    ├── 0.analysis.json
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    └── 0.events.yaml
+</code></pre></div>
+<h3 id="optional-embed">Optional embed<a class="headerlink" href="#optional-embed" title="Permanent link">&para;</a></h3>
+<p>For single-file convenience, the analysis can be embedded into the
+funscript's metadata field:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;actions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">&quot;analysis&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* full analysis schema */</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="p">}</span>
+</code></pre></div>
+<p>Sidecar <code>.analysis.json</code> is preferred for long-form (file size; analysis
+JSON for a 90-min track may be tens of MB with full per-frame video
+features).</p>
+<h2 id="top-level-structure">Top-level structure<a class="headerlink" href="#top-level-structure" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>{
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  &quot;version&quot;: &quot;1.0&quot;,
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  &quot;generated_by&quot;: { /* tool identity */ },
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  &quot;source&quot;: { /* media identity */ },
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  &quot;audio_features&quot;: { /* Layer 1 audio */ },
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  &quot;video_features&quot;: { /* Layer 1 video — optional */ },
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  &quot;structural&quot;: { /* Layer 2 inferences */ },
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  &quot;event_proposals&quot;: [ /* Layer 3 candidates */ ],
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  &quot;generation_choices&quot;: { /* what forgegen decided */ }
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>}
+</code></pre></div>
+<p>Six sections after metadata. Each documented below.</p>
+<h2 id="version-string-required"><code>version</code> (string, required)<a class="headerlink" href="#version-string-required" title="Permanent link">&para;</a></h2>
+<p>Schema version, semver. <code>"1.0"</code> is the working spec. Bump major
+on breaking changes; minor on backwards-compatible additions.</p>
+<h2 id="generated_by-object-required"><code>generated_by</code> (object, required)<a class="headerlink" href="#generated_by-object-required" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>{
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  &quot;tool&quot;: &quot;forgegen&quot;,        // or &quot;forgevents&quot;, &quot;manual&quot;, etc.
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  &quot;tool_version&quot;: &quot;0.0.4&quot;,
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  &quot;videoflow_version&quot;: &quot;0.0.4&quot;,
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  &quot;generated_at&quot;: &quot;2026-04-27T14:32:18Z&quot;  // ISO 8601 UTC
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>}
+</code></pre></div>
+<p><strong>Consumers:</strong> all (provenance / debugging).</p>
+<h2 id="source-object-required"><code>source</code> (object, required)<a class="headerlink" href="#source-object-required" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>{
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  &quot;audio_path&quot;: &quot;track.mp3&quot;,            // or &quot;track.mp4&quot; if audio is in video
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  &quot;video_path&quot;: &quot;track.mp4&quot;,            // optional, only if video present
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  &quot;duration_ms&quot;: 5431700,               // total source duration
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  &quot;audio_sample_rate&quot;: 48000,           // Hz
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  &quot;video_fps&quot;: 30.0,                    // optional
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  &quot;video_resolution&quot;: [1920, 1080],     // [width, height], optional
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  &quot;audio_md5&quot;: &quot;5667f975670f...&quot;,       // for cache validation
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  &quot;video_md5&quot;: &quot;fb3205a7d5a8...&quot;        // optional
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>}
+</code></pre></div>
+<p>The <code>_md5</code> fields let downstream tools detect that the source has
+changed and the analysis is stale.</p>
+<p><strong>Consumers:</strong> all (cache invalidation, source validation).</p>
+<h2 id="audio_features-object-required-for-audio-sources"><code>audio_features</code> (object, required for audio sources)<a class="headerlink" href="#audio_features-object-required-for-audio-sources" title="Permanent link">&para;</a></h2>
+<h3 id="layer-1-audio-features-all-time-series-arrays-are-aligned-to-beats-unless-noted-values-that-vary-continuously-envelope-contour-are-sampled-at-a-fixed-sample_period_ms">Layer 1 audio features. All time-series arrays are aligned to <em>beats</em> unless noted; values that vary continuously (envelope, contour) are sampled at a fixed <code>sample_period_ms</code>.<a class="headerlink" href="#layer-1-audio-features-all-time-series-arrays-are-aligned-to-beats-unless-noted-values-that-vary-continuously-envelope-contour-are-sampled-at-a-fixed-sample_period_ms" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>{
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  &quot;bpm&quot;: 123.0,
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  &quot;bpm_stable&quot;: true,                   // PLP confirms stable tempo
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  &quot;detector&quot;: &quot;plp&quot;,                    // &quot;beat_track&quot; | &quot;plp&quot; | &quot;ensemble&quot;
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  &quot;beats&quot;: [34, 522, 1010, ...],        // beat timestamps in ms
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  &quot;downbeats&quot;: [34, 1986, 3938, ...],   // every-4-beats by default
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  &quot;phrases&quot;: [
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    { &quot;start_ms&quot;: 0, &quot;end_ms&quot;: 7800, &quot;energy_avg&quot;: 0.42 }
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>  ],
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>  &quot;energy&quot;: {
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    &quot;per_beat&quot;: [0.45, 0.52, ...],      // RMS per beat, normalised 0-1
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>    &quot;perceptual_per_beat&quot;: [...],       // optional, mel-weighted
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>    &quot;envelope&quot;: {                       // continuous track envelope
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>      &quot;sample_period_ms&quot;: 50,
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>      &quot;values&quot;: [0.0, 0.12, 0.34, ...]
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>    }
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>  },
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>  &quot;pitch&quot;: {
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>    &quot;sample_period_ms&quot;: 50,
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>    &quot;f0_hz&quot;: [220.0, 220.5, null, ...], // null where unvoiced/uncertain
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>    &quot;confidence&quot;: [0.92, 0.91, 0.0, ...]
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>  },
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a>  &quot;spectral&quot;: {
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>    &quot;sample_period_ms&quot;: 50,
+<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a>    &quot;centroid_hz&quot;: [...],               // brightness proxy
+<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a>    &quot;flux&quot;: [...]                       // rate of spectral change
+<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a>  },
+<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a>
+<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a>  &quot;onset_density&quot;: {
+<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a>    &quot;window_ms&quot;: 1000,
+<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a>    &quot;values&quot;: [4, 5, 7, ...]            // hits per second per window
+<a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a>  },
+<a id="__codelineno-6-38" name="__codelineno-6-38" href="#__codelineno-6-38"></a>
+<a id="__codelineno-6-39" name="__codelineno-6-39" href="#__codelineno-6-39"></a>  &quot;multi_band_onsets&quot;: {                // optional, v0.0.5
+<a id="__codelineno-6-40" name="__codelineno-6-40" href="#__codelineno-6-40"></a>    &quot;low&quot;: [...],                        // sub-bass onset envelope
+<a id="__codelineno-6-41" name="__codelineno-6-41" href="#__codelineno-6-41"></a>    &quot;mid&quot;: [...],
+<a id="__codelineno-6-42" name="__codelineno-6-42" href="#__codelineno-6-42"></a>    &quot;high&quot;: [...]
+<a id="__codelineno-6-43" name="__codelineno-6-43" href="#__codelineno-6-43"></a>  },
+<a id="__codelineno-6-44" name="__codelineno-6-44" href="#__codelineno-6-44"></a>
+<a id="__codelineno-6-45" name="__codelineno-6-45" href="#__codelineno-6-45"></a>  &quot;source_separation&quot;: {
+<a id="__codelineno-6-46" name="__codelineno-6-46" href="#__codelineno-6-46"></a>    &quot;method&quot;: &quot;hpss&quot;,                   // &quot;hpss&quot; | &quot;demucs&quot; | &quot;none&quot;
+<a id="__codelineno-6-47" name="__codelineno-6-47" href="#__codelineno-6-47"></a>    &quot;applied_to_beat_tracking&quot;: &quot;percussive&quot;
+<a id="__codelineno-6-48" name="__codelineno-6-48" href="#__codelineno-6-48"></a>  }
+<a id="__codelineno-6-49" name="__codelineno-6-49" href="#__codelineno-6-49"></a>}
+</code></pre></div>
+<p><strong>Consumers:</strong></p>
+<ul>
+<li><code>videoflow.generate</code> — beats, energy, phrases (Layer 4 generation)</li>
+<li>forgegen — all (basis for proposals)</li>
+<li>forgevents — energy envelope, onset_density (event auto-finder)</li>
+<li>FF Pro — all (overlay on curve UI)</li>
+</ul>
+<h2 id="video_features-object-optional"><code>video_features</code> (object, optional)<a class="headerlink" href="#video_features-object-optional" title="Permanent link">&para;</a></h2>
+<h3 id="layer-1-video-features-present-when-source-has-video">Layer 1 video features. Present when source has video.<a class="headerlink" href="#layer-1-video-features-present-when-source-has-video" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>{
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  &quot;scene_changes&quot;: [
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    { &quot;at_ms&quot;: 12000, &quot;kind&quot;: &quot;cut&quot;,
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>      &quot;confidence&quot;: 0.95 },              // PySceneDetect threshold
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    { &quot;at_ms&quot;: 87000, &quot;kind&quot;: &quot;fade&quot;,
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>      &quot;duration_ms&quot;: 800 }
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  ],
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  &quot;motion_energy&quot;: {
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    &quot;sample_period_ms&quot;: 33,             // ~30 fps
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>    &quot;values&quot;: [0.12, 0.18, 0.22, ...]   // optical-flow magnitude, 0-1
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>  },
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>  &quot;cut_density&quot;: {
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>    &quot;window_ms&quot;: 30000,                 // 30-second sliding window
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>    &quot;values&quot;: [
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>      { &quot;start_ms&quot;: 0, &quot;end_ms&quot;: 30000, &quot;cuts_per_min&quot;: 4 }
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    ]
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>  },
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>  &quot;shot_durations&quot;: {
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>    &quot;average_ms&quot;: 7200,
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>    &quot;histogram&quot;: [                       // distribution of shot lengths
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>      { &quot;bucket_ms&quot;: 1000, &quot;count&quot;: 12 },
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>      { &quot;bucket_ms&quot;: 5000, &quot;count&quot;: 28 }
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>    ]
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>  },
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>  &quot;camera_motion&quot;: [
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>    { &quot;start_ms&quot;: 0, &quot;end_ms&quot;: 4000, &quot;kind&quot;: &quot;static&quot; },
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>    { &quot;start_ms&quot;: 4000, &quot;end_ms&quot;: 7500, &quot;kind&quot;: &quot;pan&quot;, &quot;direction&quot;: &quot;right&quot; }
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>  ],
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>  &quot;brightness&quot;: {                        // optional
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>    &quot;sample_period_ms&quot;: 33,
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>    &quot;values&quot;: [...]
+<a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>  },
+<a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a>
+<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a>  &quot;objects_detected&quot;: [                  // optional, v0.0.6+
+<a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a>    { &quot;at_ms&quot;: 12000, &quot;label&quot;: &quot;person&quot;, &quot;bbox&quot;: [x, y, w, h],
+<a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a>      &quot;confidence&quot;: 0.88 }
+<a id="__codelineno-7-42" name="__codelineno-7-42" href="#__codelineno-7-42"></a>  ],
+<a id="__codelineno-7-43" name="__codelineno-7-43" href="#__codelineno-7-43"></a>
+<a id="__codelineno-7-44" name="__codelineno-7-44" href="#__codelineno-7-44"></a>  &quot;pose_data&quot;: [                         // optional, v0.0.6+
+<a id="__codelineno-7-45" name="__codelineno-7-45" href="#__codelineno-7-45"></a>    { &quot;at_ms&quot;: 12000, &quot;skeleton_keypoints&quot;: [...] }
+<a id="__codelineno-7-46" name="__codelineno-7-46" href="#__codelineno-7-46"></a>  ]
+<a id="__codelineno-7-47" name="__codelineno-7-47" href="#__codelineno-7-47"></a>}
+</code></pre></div>
+<p><strong>Consumers:</strong></p>
+<ul>
+<li>forgegen — scene_changes (chapter proposals); motion_energy + cut_density (event proposals)</li>
+<li>forgevents — scene_changes (boundary candidates); motion_energy (high-zoom video display)</li>
+<li>ForgePlayer — scene_changes (visual chapter markers in playback)</li>
+<li>FF Pro — scene_changes (overlay on timeline)</li>
+</ul>
+<h2 id="structural-object-required"><code>structural</code> (object, required)<a class="headerlink" href="#structural-object-required" title="Permanent link">&para;</a></h2>
+<h3 id="layer-2-inferences-derived-from-layer-1">Layer 2 inferences derived from Layer 1.<a class="headerlink" href="#layer-2-inferences-derived-from-layer-1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>{
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  &quot;phrases&quot;: [
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    {
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>      &quot;start_ms&quot;: 0,
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>      &quot;end_ms&quot;: 7800,
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>      &quot;mode&quot;: &quot;tease&quot;,                  // break/tease/slow/steady/fast/edging
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>      &quot;character&quot;: &quot;melodic&quot;,           // beat-driven/melodic/drone/mixed
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>      &quot;energy_avg&quot;: 0.32,
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>      &quot;energy_trend&quot;: &quot;rising&quot;,         // rising/falling/flat/arc
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>      &quot;tone_proposal&quot;: [40, 60]         // (start_center, end_center)
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    }
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>  ],
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>  &quot;chapter_proposals&quot;: [
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>    {
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>      &quot;start_ms&quot;: 0,
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>      &quot;end_ms&quot;: 90000,
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>      &quot;intent_proposal&quot;: &quot;intro&quot;,
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>      &quot;character_proposal&quot;: &quot;melodic&quot;,
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>      &quot;tone_shape_proposal&quot;: &quot;rise&quot;,
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>      &quot;confidence&quot;: 0.82,
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>      &quot;evidence&quot;: [
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>        &quot;phrase_aggregation&quot;,            // grouped from N adjacent phrases
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>        &quot;first_scene_change&quot;,            // boundary aligns with video cut
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>        &quot;low_energy_average&quot;
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>      ]
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a>    }
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>  ],
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a>  &quot;tight_cut_groupings&quot;: [               // video-derived, optional
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a>    {
+<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a>      &quot;start_ms&quot;: 480000,
+<a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a>      &quot;end_ms&quot;: 510000,
+<a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a>      &quot;cuts_per_min&quot;: 24,
+<a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a>      &quot;intensity_signal&quot;: &quot;elevated&quot;
+<a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a>    }
+<a id="__codelineno-8-37" name="__codelineno-8-37" href="#__codelineno-8-37"></a>  ],
+<a id="__codelineno-8-38" name="__codelineno-8-38" href="#__codelineno-8-38"></a>
+<a id="__codelineno-8-39" name="__codelineno-8-39" href="#__codelineno-8-39"></a>  &quot;audio_video_alignment&quot;: {             // when both present
+<a id="__codelineno-8-40" name="__codelineno-8-40" href="#__codelineno-8-40"></a>    &quot;boundary_agreement_score&quot;: 0.78,    // 0-1, how often A &amp; V agree
+<a id="__codelineno-8-41" name="__codelineno-8-41" href="#__codelineno-8-41"></a>    &quot;disagreements&quot;: [
+<a id="__codelineno-8-42" name="__codelineno-8-42" href="#__codelineno-8-42"></a>      { &quot;audio_boundary_ms&quot;: 90000,
+<a id="__codelineno-8-43" name="__codelineno-8-43" href="#__codelineno-8-43"></a>        &quot;nearest_video_boundary_ms&quot;: 92500,
+<a id="__codelineno-8-44" name="__codelineno-8-44" href="#__codelineno-8-44"></a>        &quot;delta_ms&quot;: 2500 }
+<a id="__codelineno-8-45" name="__codelineno-8-45" href="#__codelineno-8-45"></a>    ]
+<a id="__codelineno-8-46" name="__codelineno-8-46" href="#__codelineno-8-46"></a>  }
+<a id="__codelineno-8-47" name="__codelineno-8-47" href="#__codelineno-8-47"></a>}
+</code></pre></div>
+<p><strong>Consumers:</strong></p>
+<ul>
+<li>forgegen — uses chapter_proposals + phrase modes for intent-biased generation</li>
+<li>forgevents — chapter_proposals as starting candidates for chapter authoring</li>
+<li>FF Pro — phrases + chapter overlay on curve UI</li>
+</ul>
+<h2 id="event_proposals-array-required-possibly-empty"><code>event_proposals</code> (array, required, possibly empty)<a class="headerlink" href="#event_proposals-array-required-possibly-empty" title="Permanent link">&para;</a></h2>
+<h3 id="layer-3-auto-detected-events-for-human-curation-in-forgevents">Layer 3 — auto-detected events for human curation in forgevents.<a class="headerlink" href="#layer-3-auto-detected-events-for-human-curation-in-forgevents" title="Permanent link">&para;</a></h3>
+<p>Each event is one of these shapes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>[
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  {
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    &quot;type&quot;: &quot;edge_hold&quot;,
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    &quot;at_ms&quot;: 12000,
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    &quot;duration_ms&quot;: 3000,
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    &quot;confidence&quot;: 0.78,
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    &quot;source&quot;: [&quot;audio_sustained_peak&quot;],
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    &quot;params&quot;: {}
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>  },
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>  {
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    &quot;type&quot;: &quot;accent&quot;,
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>    &quot;at_ms&quot;: 24500,
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>    &quot;confidence&quot;: 0.85,
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>    &quot;source&quot;: [&quot;onset_peak&quot;],
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>    &quot;params&quot;: { &quot;intensity&quot;: 0.92, &quot;frequency_band&quot;: &quot;low&quot; }
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>  },
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>  {
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>    &quot;type&quot;: &quot;vocal_cue&quot;,
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>    &quot;at_ms&quot;: 31200,
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>    &quot;confidence&quot;: 0.62,
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>    &quot;source&quot;: [&quot;vocal_energy&quot;],
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a>    &quot;params&quot;: { &quot;kind&quot;: &quot;moan_candidate&quot; }
+<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a>  },
+<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a>  {
+<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a>    &quot;type&quot;: &quot;climax_candidate&quot;,
+<a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a>    &quot;at_ms&quot;: 780000,
+<a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a>    &quot;confidence&quot;: 0.91,
+<a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a>    &quot;source&quot;: [&quot;audio_peak&quot;, &quot;video_peak&quot;, &quot;tight_cut_window&quot;],
+<a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a>    &quot;params&quot;: {}
+<a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a>  },
+<a id="__codelineno-9-31" name="__codelineno-9-31" href="#__codelineno-9-31"></a>  {
+<a id="__codelineno-9-32" name="__codelineno-9-32" href="#__codelineno-9-32"></a>    &quot;type&quot;: &quot;scene_accent&quot;,
+<a id="__codelineno-9-33" name="__codelineno-9-33" href="#__codelineno-9-33"></a>    &quot;at_ms&quot;: 87000,
+<a id="__codelineno-9-34" name="__codelineno-9-34" href="#__codelineno-9-34"></a>    &quot;confidence&quot;: 0.95,
+<a id="__codelineno-9-35" name="__codelineno-9-35" href="#__codelineno-9-35"></a>    &quot;source&quot;: [&quot;video_cut&quot;],
+<a id="__codelineno-9-36" name="__codelineno-9-36" href="#__codelineno-9-36"></a>    &quot;params&quot;: { &quot;cut_kind&quot;: &quot;hard&quot; }
+<a id="__codelineno-9-37" name="__codelineno-9-37" href="#__codelineno-9-37"></a>  }
+<a id="__codelineno-9-38" name="__codelineno-9-38" href="#__codelineno-9-38"></a>]
+</code></pre></div>
+<p>Common fields on every event:</p>
+<ul>
+<li><code>type</code> (string) — event type from the type vocabulary</li>
+<li><code>at_ms</code> (int) — start time in ms</li>
+<li><code>duration_ms</code> (int, optional) — for durational events</li>
+<li><code>confidence</code> (float, 0–1) — auto-finder confidence</li>
+<li><code>source</code> (array of strings) — which signals contributed</li>
+<li><code>params</code> (object, type-specific)</li>
+</ul>
+<p>Type vocabulary (open question — candidates for v0.0.5 MVP, when the
+event scaffolding lands alongside chapter intent):</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>edge_hold</code></td>
+<td>Sustained-energy peak, hold tension</td>
+</tr>
+<tr>
+<td><code>accent</code></td>
+<td>Percussive accent / micro-stroke bump</td>
+</tr>
+<tr>
+<td><code>vocal_cue</code></td>
+<td>Vocal event (moan/scream/breath candidate)</td>
+</tr>
+<tr>
+<td><code>climax_candidate</code></td>
+<td>Narrative peak indicator</td>
+</tr>
+<tr>
+<td><code>build_marker</code></td>
+<td>Energy-rise inflection point</td>
+</tr>
+<tr>
+<td><code>mode_change</code></td>
+<td>Boundary between phrase modes</td>
+</tr>
+<tr>
+<td><code>scene_accent</code></td>
+<td>Video scene change / hard cut</td>
+</tr>
+<tr>
+<td><code>tight_cut_zone</code></td>
+<td>Window of elevated cut density</td>
+</tr>
+</tbody>
+</table>
+<p>The minimum-viable vocabulary is an open question — see
+<code>architecture-considerations.md</code>. forgegen emits whichever types it can
+detect; forgevents adds human-authored types (sync_point, tease_marker,
+etc.) on top.</p>
+<p><strong>Consumers:</strong></p>
+<ul>
+<li>forgevents — primary consumer (curate / accept / reject / edit)</li>
+<li>forgegen — read its own emissions when regenerating with chapter
+  context for accent application</li>
+<li>FF Pro — overlay event markers on the curve UI</li>
+</ul>
+<h2 id="generation_choices-object-required"><code>generation_choices</code> (object, required)<a class="headerlink" href="#generation_choices-object-required" title="Permanent link">&para;</a></h2>
+<p>What forgegen decided when producing the curve. Records the <em>cause</em>
+of every output decision so the curve is reproducible from the
+analysis JSON + source.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>{
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  &quot;style&quot;: &quot;rhythmic&quot;,                  // &quot;rhythmic&quot;|&quot;sensual&quot;|&quot;intense&quot;|&quot;chaotic&quot;|&quot;custom&quot;
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  &quot;low&quot;: 10,
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  &quot;high&quot;: 90,
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  &quot;center&quot;: 50,
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  &quot;tone&quot;: &quot;auto&quot;,                        // &quot;flat&quot;|&quot;rise&quot;|&quot;fall&quot;|&quot;auto&quot;
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>  &quot;stroke_density&quot;: &quot;full&quot;,             // &quot;half&quot;|&quot;full&quot; (or &quot;1&quot;|&quot;2&quot;|&quot;4&quot;|&quot;8&quot; in v0.0.4+)
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>  &quot;energy_normalize&quot;: true,
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>  &quot;source_per_chapter&quot;: [               // when chapters drove source
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>    { &quot;chapter_index&quot;: 0, &quot;source&quot;: &quot;percussive&quot; },
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>    { &quot;chapter_index&quot;: 1, &quot;source&quot;: &quot;full&quot; }
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>  ],
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>  &quot;intent_biases_used&quot;: {
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>    &quot;build&quot;: { &quot;amplitude_scale&quot;: [0.6, 1.0], &quot;velocity_scale&quot;: [0.7, 1.0] }
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>  },
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>  &quot;energy_normalize_reference&quot;: 0.78    // the 95th-pct value used
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>}
+</code></pre></div>
+<p><strong>Consumers:</strong></p>
+<ul>
+<li>forgegen — replay / regenerate with same settings</li>
+<li>FF Pro — show "this section was generated as an <code>edge</code> chapter with full density"</li>
+<li>Future ML — learning input (paired with hand-edits to learn what artists change)</li>
+</ul>
+<h2 id="versioning-rules">Versioning rules<a class="headerlink" href="#versioning-rules" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Backwards-compatible additions</strong> (new optional fields, new event types):
+  no version bump. Tools written for v1.0 continue to work; new fields
+  are simply ignored.</li>
+<li><strong>Breaking changes</strong> (renamed fields, semantic changes, removed fields):
+  bump to v2.0. Tools declare supported versions.</li>
+<li><strong>Deprecations</strong>: mark fields as <code>_deprecated: true</code> for one major
+  version; remove in the next.</li>
+</ul>
+<p>Tools should:</p>
+<ul>
+<li>Read the <code>version</code> field first</li>
+<li>Refuse to operate on unsupported versions (with a clear error)</li>
+<li>Pass through unknown fields they don't understand (forward compatibility)</li>
+</ul>
+<h2 id="validation-rules">Validation rules<a class="headerlink" href="#validation-rules" title="Permanent link">&para;</a></h2>
+<ul>
+<li>All time fields are integer milliseconds, never seconds</li>
+<li>Time arrays must be monotonically non-decreasing</li>
+<li>Position values are integers 0–100 inclusive</li>
+<li>Confidence scores are floats in [0, 1]</li>
+<li>Phrase / chapter time ranges must tile the source duration without gaps or overlaps</li>
+<li><code>version</code> is required; absence rejects the file</li>
+</ul>
+<p>Suggested validation tooling: a <code>videoflow.analysis.validate(path)</code> CLI
+command that verifies these rules, prints first error, exits non-zero.</p>
+<h2 id="cross-references">Cross-references<a class="headerlink" href="#cross-references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Analysis layers (the conceptual model): <code>analysis-layers.md</code></li>
+<li>Chapters vs events (granularity differences): <code>chapters-vs-events.md</code></li>
+<li>Chapter composition (how chapter proposals are used): <code>chapter-composition.md</code></li>
+<li>Beats (Layer 1 audio specifics): <code>beats.md</code></li>
+<li>Architecture considerations (events catalogue): <code>architecture-considerations.md</code></li>
+<li>Canonical-emit principle (private memory): <code>feedback_forgegen_canonical_emit.md</code></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
