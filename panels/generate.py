@@ -328,28 +328,38 @@ def render() -> None:
     st.caption(active["desc"])
 
     # -----------------------------------------------------------------------
-    # Stroke density toggle — half = sensual / longer cycle, full = PD-style
+    # Stroke density — 1 / 2 / 4 / 8 actions per beat
     # -----------------------------------------------------------------------
 
     st.markdown("**Stroke density**")
     st.caption(
-        "Full = one full stroke per beat (canonical, matches PythonDancer / "
-        "your hand-crafted curves). Half = preview of what FunscriptForge's "
-        "halve transform would produce — quicker A/B without round-tripping."
+        "Number of actions per beat. 1 = sensual (one stroke spans two beats — "
+        "preview of FF's halve transform). 2 = canonical PD-style (one full "
+        "stroke per beat). 4 = dense (two strokes per beat). 8 = saturated "
+        "(reserved for short climactic chapters)."
     )
-    _density_idx = 1 if st.session_state.stroke_density == "half" else 0
+    # Normalise legacy session state ("half"/"full") to canonical int forms.
+    _legacy_to_int = {"half": 1, "full": 2, "1": 1, "2": 2, "4": 4, "8": 8,
+                      1: 1, 2: 2, 4: 4, 8: 8}
+    _current_apb = _legacy_to_int.get(st.session_state.stroke_density, 2)
+    _options = [
+        "1 — sensual (one stroke per two beats)",
+        "2 — canonical PD-style",
+        "4 — dense (two strokes per beat)",
+        "8 — saturated (climax only)",
+    ]
+    _option_to_apb = [1, 2, 4, 8]
+    _density_idx = _option_to_apb.index(_current_apb) if _current_apb in _option_to_apb else 1
     _density_choice = st.radio(
         "stroke density",
-        options=["Full — one stroke per beat",
-                 "Half — preview FunscriptForge halve transform"],
+        options=_options,
         index=_density_idx,
         label_visibility="collapsed",
-        horizontal=True,
         key="density_radio",
     )
-    _new_density = "half" if _density_choice.startswith("Half") else "full"
-    if _new_density != st.session_state.stroke_density:
-        st.session_state.stroke_density = _new_density
+    _new_apb = _option_to_apb[_options.index(_density_choice)]
+    if _new_apb != _current_apb:
+        st.session_state.stroke_density = _new_apb
         _generate_and_export()
         st.rerun()
 

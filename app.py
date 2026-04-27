@@ -60,8 +60,9 @@ _DEFAULTS = dict(
     low=10,
     high=90,
     center=50,               # midpoint of stroke (0-100). Centered model.
-    stroke_density="full",   # canonical full = PD-style (1 stroke/beat).
-                             # half = preview of FF's halve transform output.
+    stroke_density=2,        # actions per beat. 1=sensual (half), 2=PD-style (full),
+                             # 4=dense (sub-beat), 8=saturated. Aliases "half"/"full"
+                             # accepted for backward compat.
     tone="flat",             # tone = whole-shape gestalt: flat | rise | fall.
                              # Flat = constant center 50. Rise = 30→70.
                              # Fall = 70→30. First "tone" primitive.
