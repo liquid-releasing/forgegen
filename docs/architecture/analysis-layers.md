@@ -36,11 +36,11 @@ tool reads from the same substrate without recomputing.
 | Beat positions + BPM | Rhythmic timing skeleton | ✅ have (librosa.beat.beat_track) |
 | Per-beat energy | Loudness at each beat | ✅ have (RMS) |
 | Phrase boundaries | Energy-contour-derived sections | ✅ have |
-| Pitch contour (f0) | Fundamental frequency over time | 🔜 v0.0.4-ish (librosa.pyin) |
+| Pitch contour (f0) | Fundamental frequency over time | 🔜 v0.0.5-ish (librosa.pyin) |
 | Spectral centroid | "Brightness" proxy | not yet |
 | Onset density | Hit rate in moving window | not yet |
-| Multi-band onset envelopes | Per-frequency-band rhythmic info | 🔮 v0.0.5 (multi-channel) |
-| Perceptual loudness | What the ear hears, not RMS | 🔮 v0.0.5 (mel + equal-loudness) |
+| Multi-band onset envelopes | Per-frequency-band rhythmic info | 🔮 v0.0.6 (multi-channel) |
+| Perceptual loudness | What the ear hears, not RMS | 🔮 v0.0.6 (mel + equal-loudness) |
 | Spectral flux | Rate of spectral change | not yet |
 | Chroma | Pitch-class energy (polyphonic-robust) | not yet |
 | Tonnetz | Harmonic-relationship space | not yet |
@@ -84,8 +84,8 @@ the track *is*:
 |---|---|---|
 | **Phrase boundaries** | Audio energy contour + bar alignment | Today's videoflow phrase detector |
 | **Phrase modes** (break/tease/slow/steady/fast/edging) | Audio energy + BPM | Today's classifier |
-| **Phrase characters** (beat-driven / melodic / drone) | Audio + onset density + pitch confidence | New for v0.0.4 |
-| **Chapter proposals** (boundaries + intent) | Multi-source: phrase aggregation + scene changes + mode shifts | New for v0.0.4 |
+| **Phrase characters** (beat-driven / melodic / drone) | Audio + onset density + pitch confidence | New for v0.0.5 |
+| **Chapter proposals** (boundaries + intent) | Multi-source: phrase aggregation + scene changes + mode shifts | New for v0.0.5 |
 | **Tight-cut groupings** | Cut density windows | Video-driven; future |
 | **Scene-mode mapping** | Visual scene type → likely audio mode | Future, ML-assisted |
 
@@ -220,21 +220,29 @@ events) on the curve UI. funscript-tools / restim consume Layer 4
 
 ## What's reachable in v0.0.4 vs later
 
-### v0.0.4 (audio-first, locked)
+### v0.0.4 (engine robustness — no chapters)
 
-- Layer 1 audio (most have already; add pitch + multi-band onset envelopes lite)
+- PLP-based stable beat tracking + locked-BPM (foundational)
+- Sub-beat detail (1 / 2 / 4 actions per beat)
+- `videoflow.events` scaffolding (funscript metadata read/write)
+- `videoflow.chapters` resolver (mp4 → sidecar → analysis-json → none)
+
+### v0.0.5 (chapter intent — the hero, audio-first)
+
+- Layer 1 audio additions (pitch + multi-band onset envelopes lite)
 - Layer 2 structural (phrase characters, chapter proposals from audio)
 - Layer 3 event proposals (edge / accent / climax candidates from audio)
 - Analysis JSON emission with audio sections populated
+- Per-chapter intent biases in generation pipeline
 
-### v0.0.5
+### v0.0.6 (video + multi-channel)
 
 - Layer 1 video (PySceneDetect + motion energy + cut density)
 - Layer 2 structural with audio + video co-detection
 - Layer 3 video-derived events (scene accents, tight-cut moments)
 - Multi-band onset → multi-channel routing
 
-### v0.0.6+
+### v0.0.7+
 
 - Object / pose / action detection (model selection + bundling)
 - ML-driven structural inferences (visual phrase boundaries, climax detection)

@@ -2,7 +2,8 @@
 
 > Design discussion captured 2026-04-27 morning. These are open questions
 > and proposed answers, not committed implementation. Companion to
-> `chapter-composition.md` which covers the v0.0.4 chapter pivot itself.
+> `chapter-composition.md` which covers the v0.0.5 chapter pivot itself
+> (scope moved from v0.0.4 → v0.0.5 on 2026-04-27).
 >
 > Each section below corresponds to a design question the artist raised;
 > the proposals are working hypotheses subject to validation when the
@@ -243,7 +244,7 @@ audio, different *what* drives beat placement → different curve.
 So source is a hidden axis: pick a style and the source comes along; or
 go to Details and toggle. Not a first-class knob.
 
-### Where it should live in v0.0.4
+### Where it should live in v0.0.5
 
 **Per chapter, not global.** A track with a percussive intro → vocal
 build → drone edge → percussive climax → ambient outro wants different
@@ -258,26 +259,34 @@ Source becomes one of the **three per-chapter dropdowns**:
 
 With a proper tooltip explaining what each source does in human terms.
 
-## 5. Updated v0.0.4 critical path
+## 5. Critical path (revised 2026-04-27 — chapter intent moved to v0.0.5)
 
-Revised after this morning's discussion:
+### v0.0.4 — engine robustness + density (no chapters)
 
 1. ~~Commit + push~~ — done 2026-04-27 morning (feature branches)
-2. **PLP-based beat tracking** as default for tracks > ~10 min
-   (was queued; now *must* given long-form drift)
-3. **Optional locked-BPM mode** — small surface, big robustness win
-4. **Chapter ingestion** + per-chapter intent biases
-5. **Per-chapter Intent + Character + Tone dropdowns** — collapse the
-   global Tone radio + Style cards into a per-chapter design surface
-6. **Events layer scaffolding** — funscript metadata format + read/write,
-   even if the events product itself ships later
-7. **Sub-beat detail** — extend `stroke_density` to 1 / 2 / 4 actions
+2. **PLP-based beat tracking** as default for tracks > ~10 min — done
+3. **Optional locked-BPM mode** — done
+4. **Sub-beat detail** — extend `stroke_density` to 1 / 2 / 4 actions
    per beat
-8. *(deferred to v0.0.5)* Multi-band beat detection + multi-channel
-   routing as a unit
-9. *(deferred to v0.0.5)* Auto-chapter detection
-10. *(deferred to v0.0.5+)* Continuous motion between beats
-11. *(open product question)* Events as own product vs FF panel
+5. **Events layer scaffolding** — funscript metadata format + read/write
+   in `videoflow.events`. Reusable infrastructure for v0.0.5 chapters.
+6. **Chapter resolver** — `videoflow.chapters` (mp4 → sidecar →
+   analysis-json → none). Reusable infrastructure; no auto-detect yet.
+
+### v0.0.5 — chapter intent (the hero)
+
+1. **Chapter ingestion** + per-chapter intent biases
+2. **Auto-chapter detection** (the 80% solution, gated by user-configurable
+   minute threshold, default 5 min)
+3. **Per-chapter Intent + Character + Tone dropdowns** — collapse the
+   global Tone radio + Style cards into a per-chapter design surface
+
+### v0.0.6 and beyond
+
+1. *(v0.0.6)* Multi-band beat detection + multi-channel routing as a
+   unit
+2. *(v0.0.6+)* Continuous motion between beats
+3. *(open product question)* Events as own product vs FF panel
 
 ## Cross-references
 

@@ -1,8 +1,10 @@
 # forgegen — Beat Integration
 
 > How beats are detected, used, and extended in forgegen's generation
-> pipeline. Captures the v0.0.4 baseline + v0.0.5 trajectory.
-> Companion to `chapter-composition.md` and `architecture-considerations.md`.
+> pipeline. Captures the v0.0.4 grid baseline (PLP + locked-BPM +
+> sub-beat) and v0.0.5/v0.0.6 trajectory (chapter-aware sources, then
+> multi-band routing). Companion to `chapter-composition.md` and
+> `architecture-considerations.md`.
 
 ## Beats are the timing skeleton, not the whole curve
 
@@ -63,11 +65,12 @@ Beat detection has a `source` parameter:
 | Percussive | Dance music, EDM, clear drum patterns | The drum kit |
 | Full | Vocal-driven, drones, ambient, sparse percussion | The whole mix |
 
-**v0.0.4 should make this per-chapter.** A track with a percussive intro
-→ vocal build → drone edge → percussive climax → ambient outro wants
+**v0.0.5 should make this per-chapter** (alongside chapter intent
+itself — chapters are the carrier). A track with a percussive intro →
+vocal build → drone edge → percussive climax → ambient outro wants
 different sources per chapter. Today the source is hidden in style
 cards + a Details tab override; promote it to a first-class per-chapter
-dropdown.
+dropdown when chapters land.
 
 ### Sub-beat detail (extend stroke_density)
 
@@ -86,7 +89,7 @@ Extend to **1 / 2 / 4 / 8 actions per beat**:
 Sub-beat actions weighted by sub-beat onset strength so they're not just
 mechanical interpolation; they follow audio dynamics.
 
-## v0.0.5 — multi-band beat detection + routing
+## v0.0.6 — multi-band beat detection + routing
 
 ### Multi-band beat detection
 
@@ -112,10 +115,10 @@ can drive a different body-region channel:
 - Mid-band beats → core / abdomen channels
 - High-band beats → upper-body channels (chest)
 
-So v0.0.5 ships multi-band beat detection and multi-channel routing
+So v0.0.6 ships multi-band beat detection and multi-channel routing
 together. They're not independently shippable.
 
-## Continuous motion between beats (deferred to v0.0.5+)
+## Continuous motion between beats (deferred to v0.0.6+)
 
 forgegen today emits actions only at beat times. Funscript players
 interpolate linearly between actions, giving sawtooth-y motion.
@@ -132,9 +135,9 @@ Three sub-features:
 3. **Pitch-driven center drift inside chapters** — center moves with
    melody contour for melodic sections; flat for drone sections
 
-Defer to v0.0.5+ because each changes the curve emission model.
-v0.0.4's job is robust grid + good content; v0.0.5's job is
-expressiveness on top.
+Defer to v0.0.6+ because each changes the curve emission model.
+v0.0.4's job is robust grid; v0.0.5's job is chapter-driven content;
+v0.0.6's job is expressiveness on top of the chapter-shaped curve.
 
 ## Bar-level grouping (open question)
 
@@ -144,7 +147,7 @@ phrase boundaries on tracks with complex structure.
 
 Bar-level grouping (4 / 8 / 16 / 32 beats per phrase, snapped to
 downbeats) would be more robust to small beat errors and more
-musically meaningful. Open design question for v0.0.5:
+musically meaningful. Open design question for v0.0.5 (chapter scope):
 
 - Snap phrase boundaries to bar lines (4 / 8 / 16 beats)?
 - Or keep energy-contour phrases as the default and add bar-locked as
@@ -163,17 +166,22 @@ align to bars vs free phrases and pick the default that matches.
 4. **Bar-level phrase boundaries** — phrases align to bars (4/8/16/32
    beats); more robust to small beat errors than free-form aggregation
 
-## Working v0.0.4 list (beat-related)
+## Working list (beat-related)
 
-- ☐ PLP-based stable beat tracking as default for long tracks
-- ☐ Locked-BPM mode (optional toggle)
-- ☐ Per-chapter source selection (percussive / full / mixed)
+### v0.0.4 (engine robustness)
+
+- ☑ PLP-based stable beat tracking as default for long tracks (shipped)
+- ☑ Locked-BPM mode (optional toggle, shipped)
 - ☐ stroke_density extended to 1 / 2 / 4 / 8 actions per beat
+
+### v0.0.5 (chapter scope — added when chapters land)
+
+- ☐ Per-chapter source selection (percussive / full / mixed)
 
 ## Cross-references
 
 - Chapter composition: `chapter-composition.md`
 - Architecture considerations: `architecture-considerations.md`
 - v0.0.4 main spec (private memory): forgegen_v004_spec
-- Multi-band → multi-channel routing: deferred to v0.0.5 (private
+- Multi-band → multi-channel routing: deferred to v0.0.6 (private
   memory: forgegen_v004_spec for the routing design)

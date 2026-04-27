@@ -1,8 +1,9 @@
 # forgegen — Chapter-Based Haptic Narrative Composition
 
 > Architectural guidance, locked 2026-04-26. The reframe of forgegen's purpose
-> at the v0.0.4 milestone, validated against three quintessential gold-standard
-> hand-crafted reference tracks.
+> targeting the v0.0.5 milestone (chapter intent moved from v0.0.4 → v0.0.5
+> on 2026-04-27 to keep v0.0.4 focused on engine robustness), validated
+> against three quintessential gold-standard hand-crafted reference tracks.
 
 ## What forgegen actually is
 
@@ -147,10 +148,10 @@ This is the canonical-emit pattern at the *function* level
 (see `canonical-emit-pattern.md`) — implemented once in videoflow, called
 by every consumer.
 
-For v0.0.4 MVP: forgegen reads (2) and (3) and accepts manual chapter input
+For v0.0.5 MVP: forgegen reads (2) and (3) and accepts manual chapter input
 via a config / sidecar file in the interim before forgevents ships.
 
-### Auto-chapter threshold (v0.0.4, locked 2026-04-27)
+### Auto-chapter threshold (v0.0.5, locked 2026-04-27)
 
 Auto-chapter generation is gated by a **user-configurable threshold**
 expressed in minutes, defaulting to **5 minutes**. The artist's call:

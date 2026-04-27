@@ -137,9 +137,9 @@ breaks the artist wants for reasons not present in either signal.
 
 | Stage | Boundary accuracy | Required human work |
 |---|---|---|
-| v0.0.4 (audio only) | ~60–80% | Review 20–40% of proposals |
-| v0.0.5 (audio + video co-detection) | ~80–90% | Review 10–20% |
-| v0.0.6+ (corpus-trained refinements) | ~85–95% on tracks similar to corpus | Review 5–15%, mostly low-confidence cases |
+| v0.0.5 (audio only) | ~60–80% | Review 20–40% of proposals |
+| v0.0.6 (audio + video co-detection) | ~80–90% | Review 10–20% |
+| v0.0.7+ (corpus-trained refinements) | ~85–95% on tracks similar to corpus | Review 5–15%, mostly low-confidence cases |
 
 **Even at 95% there's still review.** The architecture must support
 review-as-a-first-class workflow at every stage.
@@ -161,8 +161,8 @@ to place precisely (millisecond accuracy required).
 
 Vocal cues are the weakest auto-finder — distinguishing a sigh from a
 breath from a moan needs speech models that aren't currently bundled.
-**v0.0.4 likely emits `vocal_cue` only with low confidence**;
-v0.0.6+ adds bundled audio classifiers and confidence rises.
+**v0.0.5 likely emits `vocal_cue` only with low confidence**;
+v0.0.7+ adds bundled audio classifiers and confidence rises.
 
 ## Where the architecture insists on human review
 

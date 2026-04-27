@@ -6,8 +6,9 @@
 > moves through the pipeline rather than being recomputed at each stage.
 >
 > Status: working spec. Field shapes are subject to refinement during
-> v0.0.4 implementation. Versioning rules below describe how we evolve
-> the schema without breaking downstream consumers.
+> v0.0.4 (audio + structural skeleton) and v0.0.5 (chapter intent +
+> event vocabulary) implementation. Versioning rules below describe
+> how we evolve the schema without breaking downstream consumers.
 
 ## Design principles
 
@@ -368,7 +369,8 @@ Common fields on every event:
 - `source` (array of strings) — which signals contributed
 - `params` (object, type-specific)
 
-Type vocabulary (open question — candidates for v0.0.4 MVP):
+Type vocabulary (open question — candidates for v0.0.5 MVP, when the
+event scaffolding lands alongside chapter intent):
 
 | Type | Meaning |
 |---|---|
