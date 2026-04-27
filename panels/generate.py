@@ -112,6 +112,64 @@ def _energy_chart(beat_map, modes):
     return fig
 
 
+def _draw_window_box(
+    png_bytes: bytes,
+    *,
+    win_start_ms: int,
+    win_dur_ms: int,
+    total_ms: int,
+    plot_left_px: int = 50,
+    plot_right_px: int = 18,
+    plot_top_px: int = 6,
+    plot_bottom_px: int = 22,
+    outline_rgba: tuple = (255, 230, 90, 255),
+    line_width: int = 3,
+) -> bytes:
+    """Overlay a bright outlined box on a static funscript chart PNG.
+
+    Highlights the [win_start_ms, win_start_ms + win_dur_ms] region on
+    the chart (which spans [0, total_ms]) so you can see at a glance
+    where the comparison strips are previewing.
+
+    Plot-area margins are estimated from FunscriptForge's static chart
+    layout (matplotlib bbox_inches="tight" + pad_inches=0.1 + a "pos"
+    y-label and time x-label). Tweak ``plot_left_px`` / ``plot_right_px``
+    if alignment drifts after a chart-style change.
+    """
+    if total_ms <= 0:
+        return png_bytes
+    from io import BytesIO
+
+    from PIL import Image, ImageDraw
+
+    img = Image.open(BytesIO(png_bytes)).convert("RGBA")
+    w, h = img.size
+    plot_w = max(1, w - plot_left_px - plot_right_px)
+
+    x_start = plot_left_px + int(win_start_ms / total_ms * plot_w)
+    x_end = plot_left_px + int(
+        min(total_ms, win_start_ms + win_dur_ms) / total_ms * plot_w
+    )
+    # Make sure the box has at least a few pixels of width on huge tracks.
+    if x_end - x_start < 4:
+        x_end = x_start + 4
+    y_top = plot_top_px
+    y_bot = h - plot_bottom_px
+
+    overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    draw.rectangle(
+        [x_start, y_top, x_end, y_bot],
+        outline=outline_rgba,
+        width=line_width,
+    )
+    img = Image.alpha_composite(img, overlay)
+
+    out = BytesIO()
+    img.convert("RGB").save(out, format="PNG")
+    return out.getvalue()
+
+
 def _funscript_chart(curve):
     """Position curve + velocity heatmap strip, stacked."""
     import plotly.graph_objects as go
@@ -280,118 +338,66 @@ def render() -> None:
     # plotly_chart params would collide on Streamlit's auto-generated ID.
 
     # -----------------------------------------------------------------------
-    # Style cards
+    # Knob handlers — invoked by the comparison-strip widget when a
+    # thumbnail is clicked. Encode the source-change re-analysis logic
+    # that used to live inline in the style-card handler.
     # -----------------------------------------------------------------------
 
-    st.markdown("**Style**")
-    style_cols = st.columns(len(_STYLES))
-    for col, (key, preset) in zip(style_cols, _STYLES.items()):
-        selected = st.session_state.style == key
-        border = "2px solid #ff7043" if selected else "1px solid #444"
-        bg = "rgba(255,112,67,0.08)" if selected else "rgba(255,255,255,0.03)"
-        if col.button(
-            preset["label"],
-            key=f"style_{key}",
-            width="stretch",
-            help=preset["desc"],
-            type="primary" if selected else "secondary",
-        ):
-            _source_changed = preset["source"] != st.session_state.source
-            st.session_state.style = key
-            st.session_state.low = preset["low"]
-            st.session_state.high = preset["high"]
-            st.session_state.source = preset["source"]
-            st.session_state.curve = None
-            st.session_state.funscript_bytes = None
-            # If the new style uses a different audio source (percussive vs
-            # full mix), the existing beat_map was computed with the old
-            # source — so re-detect beats. Without this, a style switch
-            # would only affect curve range, not actual beat detection.
-            if _source_changed and st.session_state.last_analysed_path:
-                _path = st.session_state.last_analysed_path
-                _name = st.session_state.audio_name or _path.split("/")[-1].split("\\")[-1]
-                st.session_state.beat_map = None
-                st.session_state.modes = None
-                st.session_state.analysis_pending = (_path, _name, False)
-                st.session_state.analysis_log = []
-                st.session_state.last_error = None
-            else:
-                # Same source — beat_map still valid. Auto-regenerate so the
-                # new range/density takes effect without a separate Generate
-                # click. Was the workflow gap that made all four style outputs
-                # appear identical: clicking style without re-clicking Generate.
-                _generate_and_export()
-            st.rerun()
+    def _on_select_style(new_style: str) -> None:
+        preset = _STYLES[new_style]
+        source_changed = preset["source"] != st.session_state.source
+        st.session_state.style = new_style
+        st.session_state.low = preset["low"]
+        st.session_state.high = preset["high"]
+        st.session_state.source = preset["source"]
+        st.session_state.curve = None
+        st.session_state.funscript_bytes = None
+        if source_changed and st.session_state.last_analysed_path:
+            # Different audio source → re-detect beats with the new source.
+            # Without this, a style switch would only shift the range, not
+            # the actual beat grid.
+            _path = st.session_state.last_analysed_path
+            _name = (
+                st.session_state.audio_name
+                or _path.split("/")[-1].split("\\")[-1]
+            )
+            st.session_state.beat_map = None
+            st.session_state.modes = None
+            st.session_state.analysis_pending = (_path, _name, False)
+            st.session_state.analysis_log = []
+            st.session_state.last_error = None
+        else:
+            _generate_and_export()
 
-    # Show active style description
+    def _on_select_density(new_density: int) -> None:
+        st.session_state.stroke_density = new_density
+        _generate_and_export()
+
+    _TONE_KEYS = {"flat", "rise", "fall", "auto"}
+
+    def _on_select_tone(new_tone: str) -> None:
+        if new_tone in _TONE_KEYS:
+            st.session_state.tone = new_tone
+            _generate_and_export()
+
+    # -----------------------------------------------------------------------
+    # Comparison strips — three rows of four thumbnails each (Style /
+    # Density / Tone). Single ◀▶ scroll controller drives all 12 thumbs.
+    # Each thumbnail varies one knob; the other two stay at their current
+    # session_state value. Click a thumbnail → that knob updates.
+    # -----------------------------------------------------------------------
+
+    from panels import _comparison_strips
+    _comparison_strips.render(
+        bm,
+        on_select_style=_on_select_style,
+        on_select_density=_on_select_density,
+        on_select_tone=_on_select_tone,
+    )
+
+    # Show active style description as before
     active = _STYLES[st.session_state.style]
     st.caption(active["desc"])
-
-    # -----------------------------------------------------------------------
-    # Stroke density — 1 / 2 / 4 / 8 actions per beat
-    # -----------------------------------------------------------------------
-
-    st.markdown("**Stroke density**")
-    st.caption(
-        "Number of actions per beat. 1 = sensual (one stroke spans two beats — "
-        "preview of FF's halve transform). 2 = canonical PD-style (one full "
-        "stroke per beat). 4 = dense (two strokes per beat). 8 = saturated "
-        "(reserved for short climactic chapters)."
-    )
-    # Normalise legacy session state ("half"/"full") to canonical int forms.
-    _legacy_to_int = {"half": 1, "full": 2, "1": 1, "2": 2, "4": 4, "8": 8,
-                      1: 1, 2: 2, 4: 4, 8: 8}
-    _current_apb = _legacy_to_int.get(st.session_state.stroke_density, 2)
-    _options = [
-        "1 — sensual (one stroke per two beats)",
-        "2 — canonical PD-style",
-        "4 — dense (two strokes per beat)",
-        "8 — saturated (climax only)",
-    ]
-    _option_to_apb = [1, 2, 4, 8]
-    _density_idx = _option_to_apb.index(_current_apb) if _current_apb in _option_to_apb else 1
-    _density_choice = st.radio(
-        "stroke density",
-        options=_options,
-        index=_density_idx,
-        label_visibility="collapsed",
-        key="density_radio",
-    )
-    _new_apb = _option_to_apb[_options.index(_density_choice)]
-    if _new_apb != _current_apb:
-        st.session_state.stroke_density = _new_apb
-        _generate_and_export()
-        st.rerun()
-
-    # -----------------------------------------------------------------------
-    # Tone — whole-shape gestalt (drives the curve's macro arc)
-    # -----------------------------------------------------------------------
-
-    st.markdown("**Tone**")
-    st.caption(
-        "Style sets the local knobs (range, density, source). Tone shapes "
-        "the *whole* arc — where the curve sits across the full track. "
-        "Flat = constant 50. Rise = builds upward over time (30→70). "
-        "Fall = relaxes downward (70→30)."
-    )
-    _tone_options = ["Flat — constant center",
-                     "Rise — center drifts up over track",
-                     "Fall — center drifts down over track"]
-    _tone_keys = ["flat", "rise", "fall"]
-    _tone_idx = _tone_keys.index(st.session_state.tone) if st.session_state.tone in _tone_keys else 0
-    _tone_choice = st.radio(
-        "tone",
-        options=_tone_options,
-        index=_tone_idx,
-        label_visibility="collapsed",
-        horizontal=True,
-        key="tone_radio",
-    )
-    _new_tone = _tone_keys[_tone_options.index(_tone_choice)]
-    if _new_tone != st.session_state.tone:
-        st.session_state.tone = _new_tone
-        _generate_and_export()
-        st.rerun()
 
     st.divider()
 
@@ -409,13 +415,83 @@ def render() -> None:
 
     if st.session_state.curve:
         st.caption("Generated funscript")
-        st.plotly_chart(
-            _funscript_chart(st.session_state.curve),
-            width="stretch",
-        )
 
-        action_count = len(st.session_state.curve)
-        st.caption(f"{action_count} actions · {bm.duration_ms / 1000:.1f}s")
+        # FF velocity-coloured position curve (same colormap as FF).
+        # The comparison-strip window (set by ◀▶ + zoom) is drawn as a
+        # bright box outline so you can see at a glance where the strips
+        # above are previewing.
+        # The energy chart is intentionally NOT rendered here — it
+        # already lives in the analysis section above the tabs (per
+        # user's note 2026-04-27: "energy isn't being generated, so
+        # we don't need it again").
+        _curve = st.session_state.curve
+        _positions = [p for _, p in _curve]
+        _times_s = [t / 1000 for t, _ in _curve]
+        _vels: list[float] = []
+        for _i in range(1, len(_curve)):
+            _dt = _times_s[_i] - _times_s[_i - 1]
+            if _dt > 0:
+                _vels.append(abs(_positions[_i] - _positions[_i - 1]) / _dt)
+        _vels_sorted = sorted(_vels)
+        _p90 = (
+            _vels_sorted[int(len(_vels_sorted) * 0.9) - 1]
+            if _vels_sorted else 0.0
+        )
+        _max_v = max(_vels_sorted) if _vels_sorted else 0.0
+        _mean_v = sum(_vels) / len(_vels) if _vels else 0.0
+        _mean_p = sum(_positions) / len(_positions) if _positions else 0.0
+
+        _mins = bm.duration_ms // 60_000
+        _secs = (bm.duration_ms % 60_000) / 1000
+
+        from forge_ui_components.funscript_chart.static import (
+            render_vibrant_static,
+        )
+        _actions = [
+            {"at": int(t), "pos": int(p)}
+            for t, p in st.session_state.curve
+        ]
+        _win_start = int(
+            st.session_state.get("preview_window_start_ms", 0)
+        )
+        _win_dur = int(
+            st.session_state.get("preview_window_dur_ms", 4000)
+        )
+        _png = render_vibrant_static(
+            _actions,
+            height_px=240,
+            width_px=1400,
+            show_labels=False,
+        )
+        _png_with_box = _draw_window_box(
+            _png,
+            win_start_ms=_win_start,
+            win_dur_ms=_win_dur,
+            total_ms=bm.duration_ms,
+        )
+        st.image(_png_with_box, use_container_width=True)
+
+        # ── Stats row underneath the chart (FF format) ────────────────
+        # Same numbers FunscriptForge shows: Duration · Actions · Beats ·
+        # Mean pos · Range · Avg vel · p90 vel · Peak vel. Use the gold-
+        # standard reference (RoD: avg vel 664) to read the gap.
+        _stat_cols = st.columns(8)
+        _stat_cols[0].metric(
+            "Duration",
+            f"{int(_mins)}:{_secs:04.1f}",
+            help="Track length in M:SS",
+        )
+        _stat_cols[1].metric("Actions", f"{len(_curve):,}")
+        _stat_cols[2].metric("Beats", f"{len(bm.beats):,}")
+        _stat_cols[3].metric("Mean pos", f"{_mean_p:.1f}")
+        _stat_cols[4].metric(
+            "Range",
+            f"{min(_positions)} → {max(_positions)}"
+            if _positions else "—",
+        )
+        _stat_cols[5].metric("Avg vel", f"{_mean_v:.0f}")
+        _stat_cols[6].metric("p90 vel", f"{_p90:.0f}")
+        _stat_cols[7].metric("Peak vel", f"{_max_v:.0f}")
 
         if st.session_state.funscript_bytes:
             stem = Path(st.session_state.audio_name).stem or "output"
