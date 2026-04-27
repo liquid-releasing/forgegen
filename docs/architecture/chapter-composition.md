@@ -119,6 +119,34 @@ audio + video, which is exactly what forgevents needs for haptic events.
 Same problem, same tool. ForgeAssembler stays focused on clip composition;
 forgevents owns timeline-overlay authoring (chapters + events).
 
+### Chapter resolver lives in videoflow
+
+The priority-order resolver above (mp4 → sidecar → analysis-json → auto-detect)
+is a **shared videoflow function**, not forgegen-internal. Every forge tool
+that loads a track wants to ask the same question — *"are there chapters here,
+and where do I find them?"* — so the resolver is a `videoflow.chapters`
+function consumed across the family:
+
+```python
+from videoflow.chapters import load_chapters
+
+# Returns: list[Chapter] from the highest-priority source available, or
+# None if no chapters anywhere (caller decides whether to auto-detect)
+chapters = load_chapters("path/to/track.mp4")
+```
+
+Consumers:
+
+- **forgegen** — checks for chapters at load; runs auto-detect when missing
+- **forgevents** — loads existing chapters into the editor on startup
+- **FunscriptForge Pro** — overlays chapter structure on the curve view
+- **ForgeAssembler** — chapter-aware clip composition (when retrofitted)
+- **ForgePlayer** — playback chapter-nav (already an existing concern)
+
+This is the canonical-emit pattern at the *function* level
+(see `canonical-emit-pattern.md`) — implemented once in videoflow, called
+by every consumer.
+
 For v0.0.4 MVP: forgegen reads (2) and (3) and accepts manual chapter input
 via a config / sidecar file in the interim before forgevents ships.
 
