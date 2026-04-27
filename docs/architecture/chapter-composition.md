@@ -122,6 +122,51 @@ forgevents owns timeline-overlay authoring (chapters + events).
 For v0.0.4 MVP: forgegen reads (2) and (3) and accepts manual chapter input
 via a config / sidecar file in the interim before forgevents ships.
 
+### Auto-chapter threshold (v0.0.4, locked 2026-04-27)
+
+Auto-chapter generation is gated by a **user-configurable threshold**
+expressed in minutes, defaulting to **5 minutes**. The artist's call:
+
+> *"I think we ask the user the threshold to doing chapters with 5
+> minutes being default."*
+>
+> *"minutes is the right timescale i think. I don't want every cut or
+> fade to create one."*
+
+Concretely:
+
+- forgegen exposes a setting: *"Generate chapters when track is longer
+  than [N] minutes"*, default 5
+- If the source duration exceeds the threshold AND no existing chapters
+  are found in priority order (1)–(2)–(3) above, run auto-detection
+- Otherwise generate without chapter biasing (whole track is one
+  implicit chapter)
+
+The threshold is per-track-load, not per-project. Setting it to 999 effectively
+disables auto-detection; setting to 0 always runs it.
+
+### Chapters are minute-scale; cuts and fades are not chapters
+
+Auto-detection produces chapter proposals at minute-scale. The
+fine-grained video signals (every scene cut, every fade, every motion
+peak) are **captured in `track.analysis.json`** but do *not* promote to
+chapter boundaries by default. They serve other consumers:
+
+- forgegen — events layer (scene_accent, tight_cut_zone, etc.)
+- forgevents — event candidates for review
+- ForgePlayer — visual chapter markers / accent visualisation
+- Future **musicvideogenerator** product — composition primitives for
+  music-video assembly
+
+Chapter detection logic deliberately *under*-segments compared to raw
+video signal density. Heuristics:
+
+- A cluster of cuts within < 30 seconds is a *single* chapter event,
+  not several
+- Fades become chapter boundaries only when accompanied by audio
+  energy shifts AND duration of preceding section is meaningful (>= threshold/2)
+- Single cuts in otherwise continuous content are events, not chapters
+
 ## UX constraint: chapter authoring must be effortless
 
 The artist's observation: *"developers are crafting the story; it's too hard
