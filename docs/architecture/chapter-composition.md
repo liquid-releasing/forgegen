@@ -100,15 +100,27 @@ envelopes*, not for whole-track centre drift.
 
 ## Chapter sources (priority order)
 
-1. **User-authored** in forgegen — chapter timeline editor, optimised for
-   storyteller flow (see UX constraint below).
+1. **Authored in forgevents** (planned standalone tool) — frame-accurate
+   side-by-side audio + video player, auto-finder for candidate boundaries,
+   frame-step hotkeys for exact placement. Same tool authors haptic events;
+   same UX, different output. See `project_forgevents_planned.md` (private
+   memory) for the full spec.
 2. **Embedded mp4 chapters** — videos may already carry chapter markers from
    authoring tools. forgegen reads via `ffprobe -show_chapters`.
-3. **Auto-detected** — propose boundaries from audio structure (major energy /
-   spectral / harmonic shifts). User confirms / adjusts / labels.
+3. **Auto-detected by forgegen** — propose boundaries from audio structure
+   (major energy / spectral / harmonic shifts). Artist confirms / adjusts in
+   forgevents.
 
-For v0.0.4 MVP: support (2) + manual UI for (1). Defer auto-detection to
-v0.0.5.
+**Architectural note (revised 2026-04-27 morning):** chapter authoring was
+originally specced to live in ForgeAssembler. That was wrong — ForgeAssembler
+is a clip-stitcher and doesn't have frame-accurate playback. Chapter
+boundaries need millisecond-precision timestamp picking with side-by-side
+audio + video, which is exactly what forgevents needs for haptic events.
+Same problem, same tool. ForgeAssembler stays focused on clip composition;
+forgevents owns timeline-overlay authoring (chapters + events).
+
+For v0.0.4 MVP: forgegen reads (2) and (3) and accepts manual chapter input
+via a config / sidecar file in the interim before forgevents ships.
 
 ## UX constraint: chapter authoring must be effortless
 

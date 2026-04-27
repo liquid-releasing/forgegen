@@ -117,15 +117,34 @@ beta, frequency, volume, pulse_width, pulse_frequency, pulse_rise_time):
 2. **One fewer product to ship** — family is already at 5
 3. **Events without curves don't make sense** — they overlay something
 
-### Working recommendation
+### Working recommendation (revised 2026-04-27)
 
-Lean toward **its own product** — but only after the catalogue above is
-compressed to a *minimum viable event vocabulary*, perhaps 4–6 core
-event types instead of 15+. If 4 types: FunscriptForge panel. If 12+
-types with auto-detection pipelines: own product.
+**Own product, locked.** The decisive factor: chapter authoring has the
+*same UX problem class as event authoring* — find an exact moment in
+audio + video, stamp metadata, emit timeline overlay. Both need a
+frame-accurate side-by-side player + auto-finder for candidates.
 
-Open question: which 4–6 events deliver 80% of the nuance? That's the
-shape-of-MVP decision before committing to a product or panel.
+Yesterday's spec put chapter authoring in ForgeAssembler. That was wrong
+— ForgeAssembler is a clip-stitcher, no frame-accurate playback.
+forgevents (the events product) extends naturally to handle both
+chapters and events because they share UX entirely. **One tool, two
+output types** (chapter list + event list, both as funscript metadata
+or paired YAML).
+
+This consolidates the family:
+
+- **forgegen** — canonical curve generation, chapter-intent-aware
+- **forgevents** — *the timeline overlay editor*: chapters + events,
+  frame-accurate, audio + video side-by-side
+- **FunscriptForge** — curve editing
+- **ForgeAssembler** — clip composition (stitches multi-source content;
+  no longer authors chapters)
+- **ForgePlayer** — playback
+- **restim / funscript-tools** — rendering
+
+Open question that survived: which 4–6 event types deliver 80% of the
+nuance? Governs MVP scope of forgevents' events output (the chapter
+output is simpler, just `[(start_ms, end_ms, intent), …]`).
 
 ## 3. Beat integration as four layers
 
