@@ -119,7 +119,7 @@ class _BridgeHandler(http.server.BaseHTTPRequestHandler):
 
         if parsed.path == "/pick-folder":
             result = windows[0].create_file_dialog(
-                webview.FOLDER_DIALOG,
+                webview.FileDialog.FOLDER,
                 **kwargs,
             )
         elif parsed.path == "/pick-file":
@@ -127,7 +127,7 @@ class _BridgeHandler(http.server.BaseHTTPRequestHandler):
             if filters_raw:
                 kwargs["file_types"] = tuple(filters_raw)
             result = windows[0].create_file_dialog(
-                webview.OPEN_DIALOG,
+                webview.FileDialog.OPEN,
                 **kwargs,
             )
         else:

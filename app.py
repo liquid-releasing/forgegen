@@ -60,6 +60,14 @@ _DEFAULTS = dict(
     low=10,
     high=90,
     center=50,               # midpoint of stroke (0-100). Centered model.
+    stroke_density=2,        # actions per beat. 1=sensual (half), 2=PD-style (full),
+                             # 4=dense (sub-beat), 8=saturated. Aliases "half"/"full"
+                             # accepted for backward compat.
+    tone="auto",             # tone = whole-shape gestalt: flat | rise | fall | auto.
+                             # auto = per-phrase center swing derived from
+                             # each phrase's energy slope — the smart default
+                             # that adapts to whatever audio is loaded.
+                             # User can override to flat / rise / fall.
     source="percussive",
     output_dir=str(Path.home() / "Downloads"),
     saved_path=None,
@@ -70,9 +78,16 @@ _DEFAULTS = dict(
 )
 
 
+def _12h(dt) -> str:
+    """Format a datetime as e.g. '2:05:15 PM' (12-hour, no leading zero)."""
+    h12 = dt.hour % 12 or 12
+    ampm = "PM" if dt.hour >= 12 else "AM"
+    return f"{h12}:{dt.minute:02d}:{dt.second:02d} {ampm}"
+
+
 def _log(msg: str) -> None:
     import datetime
-    ts = datetime.datetime.now().strftime("%H:%M:%S")
+    ts = _12h(datetime.datetime.now())
     st.session_state.analysis_log.append((ts, msg))
 
 
@@ -317,21 +332,37 @@ if st.session_state.analysis_pending is not None:
         os.path.getsize(media_path) / 1024 / 1024
         if os.path.isfile(media_path) else 0
     )
+    import datetime as _dt
     import time as _time
     _start_t = _time.time()
-    _start_hms = _time.strftime("%H:%M:%S")
+    _start_hms = _12h(_dt.datetime.now())
     with st.status(
         f"Analysing **{name}** ({file_size_mb:.0f} MB)",
         expanded=True,
     ) as status:
-        status.write(f"⏱ Started at {_start_hms}")
-        status.write("📂 Loading audio + extracting waveform (may take a minute for video files)…")
+        status.write(f"🕒 Started at {_start_hms}")
+        _stage_holder = status.empty()
+        _stage_holder.write(
+            "📂 Preparing… (large video files take several minutes)"
+        )
         _log(f"Starting analyze_beats(source={st.session_state.source})")
+
+        def _on_stage(label: str) -> None:
+            # videoflow calls this at the start of each pipeline stage.
+            # We update a single placeholder line so the user sees what's
+            # happening live (instead of one opaque "Loading…" message
+            # for the full 8-minute pipeline). Elapsed seconds shown so
+            # the user knows the process is alive.
+            _e = _time.time() - _start_t
+            _stage_holder.write(f"⚙️ {label}  (elapsed {_e:.0f}s)")
+            _log(label)
+
         try:
             from videoflow.audio import BeatError, analyze_beats
             beat_map = analyze_beats(
                 media_path,
                 source=st.session_state.source,
+                progress_callback=_on_stage,
             )
             elapsed = _time.time() - _start_t
             st.session_state.beat_map = beat_map
@@ -407,45 +438,36 @@ else:
         f"{bm.duration_ms/1000:.1f}s"
     )
 
-    # Beat-energy chart, coloured by phrase mode. The chart helper lives
-    # in panels.generate so the (visualisation, mode colours) stays in one
-    # place — we just surface it earlier in the page so the user sees what
-    # was found before they pick a style and generate.
-    from panels.generate import _energy_chart, _MODE_COLOURS
+    # Stacked analysis preview — beat energy on top, funscript intensity
+    # heatmap directly underneath so the two pictures are read together.
+    # The user's note 2026-04-27: "the first about minute the music is
+    # softer" — that softness is visible on BOTH charts at the same x
+    # position, so stacking them lets the eye link "low audio energy"
+    # to "calm haptic intensity" at a glance.
+    from panels.generate import (
+        _energy_chart,
+        _energy_chart_png,
+        _ENERGY_PNG_THRESHOLD,
+        _MODE_COLOURS,
+    )
     st.caption("Beat energy — coloured by phrase mode")
-    st.plotly_chart(_energy_chart(bm, st.session_state.modes), width="stretch")
+    if len(bm.beats) > _ENERGY_PNG_THRESHOLD:
+        # Long track — render as static PNG so Streamlit can paint
+        # without re-serialising a 26K-bar Plotly figure on every rerun.
+        st.image(
+            _energy_chart_png(bm, st.session_state.modes),
+            use_container_width=True,
+        )
+    else:
+        st.plotly_chart(
+            _energy_chart(bm, st.session_state.modes),
+            width="stretch",
+            config={"displayModeBar": False},
+        )
 
-    _active_modes = sorted({_m for _, _, _m in st.session_state.modes})
-    if _active_modes:
-        _legend_cols = st.columns(len(_active_modes))
-        for _col, _mode in zip(_legend_cols, _active_modes):
-            _colour = _MODE_COLOURS.get(_mode, "#aaa")
-            _col.markdown(
-                f"<span style='color:{_colour}'>■</span> {_mode}",
-                unsafe_allow_html=True,
-            )
-
-    import pandas as _pd
-    _rows = []
-    for _i, (_s_ms, _e_ms, _mode) in enumerate(st.session_state.modes):
-        _beats_n = sum(1 for _b in bm.beats if _s_ms <= _b < _e_ms)
-        _energies = [
-            _en for _b, _en in zip(bm.beats, bm.energy)
-            if _s_ms <= _b < _e_ms
-        ]
-        _avg_e = sum(_energies) / len(_energies) if _energies else 0.0
-        _rows.append({
-            "#": _i + 1,
-            "Start": f"{_s_ms / 1000:.1f}s",
-            "End": f"{_e_ms / 1000:.1f}s",
-            "Duration": f"{(_e_ms - _s_ms) / 1000:.1f}s",
-            "Beats": _beats_n,
-            "Avg energy": round(_avg_e, 3),
-            "Mode": _mode,
-        })
-    st.dataframe(_pd.DataFrame(_rows), width="stretch", hide_index=True)
-
-    # --- Funscript heatmap (third chart) — only after Generate has produced one ---
+    # Funscript intensity strip — only after Generate has produced one.
+    # Rendered directly under the energy chart so the two are visually
+    # linked (energy = audio drive, intensity = haptic response).
     if st.session_state.funscript_bytes:
         try:
             import json as _json
@@ -465,6 +487,21 @@ else:
                 st.image(_buf.getvalue(), width="stretch")
         except Exception as _exc:
             st.caption(f"Heatmap render failed: {_exc}")
+
+    # Phrase legend (mode colour swatches — same palette as the energy
+    # chart and the phrase-table row tinting).
+    _active_modes = sorted({_m for _, _, _m in st.session_state.modes})
+    if _active_modes:
+        _legend_cols = st.columns(len(_active_modes))
+        for _col, _mode in zip(_legend_cols, _active_modes):
+            _colour = _MODE_COLOURS.get(_mode, "#aaa")
+            _col.markdown(
+                f"<span style='color:{_colour}'>■</span> {_mode}",
+                unsafe_allow_html=True,
+            )
+
+    from panels.phrase_table import render_phrase_table
+    render_phrase_table(bm, st.session_state.modes, _MODE_COLOURS)
 
     st.divider()
 

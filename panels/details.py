@@ -111,17 +111,24 @@ def render() -> None:
     if st.button("↺ Regenerate", type="primary", width="stretch"):
         with st.spinner("Regenerating…"):
             st.session_state.modes = updated_modes
+            _tone_traj = {"flat": None, "rise": (30, 70), "fall": (70, 30)}.get(
+                st.session_state.tone
+            )
             curve = beats_to_curve(
                 bm,
                 low=st.session_state.low,
                 high=st.session_state.high,
                 center=st.session_state.center,
+                center_trajectory=_tone_traj,
+                energy_normalize=True,
+                stroke_density=st.session_state.stroke_density,
             )
             shaped = shape_curve(
                 curve,
                 updated_modes,
                 low=st.session_state.low,
                 center=st.session_state.center,
+                center_trajectory=_tone_traj,
             )
             st.session_state.curve = shaped
 
