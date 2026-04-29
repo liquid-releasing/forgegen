@@ -86,7 +86,27 @@ Pure DSP — no video, no LLM, no GPU required.
 
 ---
 
-### v0.2 — LLM semantic layer
+### v0.5 — Long-form scaling: auto-chunking + chapter intent
+
+**Goal:** forgegen handles arbitrarily long media. Multi-hour audio and feature-length video do not crash, run out of memory, or stall the UI.
+
+**Driver:** v0.1 audio path tips over on long files (threshold currently unknown — likely librosa's tempogram memory cliff). The fix is to chunk processing along natural boundaries (chapters when present, scene-detected synthetic chapters when not).
+
+**Big chunks (lives in videoflow, consumed here):**
+- [ ] `videoflow.structural.auto_chapter()` — synthetic Chapter list when source has none, by grouping scenes / silences to a ~5–6 min target
+- [ ] Chapter-aware `analyze_beats()` — process one chunk at a time, hold one tempogram in memory
+- [ ] Per-chunk AudioBeatMap stitching — single output timeline, per-chunk metadata preserved for intent
+- [ ] forgegen UI: per-chapter progress bar instead of opaque wait
+
+**What this enables:** chapter intent becomes meaningful (every long file has chapters). v0.3 video work and v0.4 hybrid blending compose with this naturally.
+
+**Reusability:** Lives in `videoflow.structural`, so forgeplayer / forgeassembler / funscriptforge / future tools all benefit.
+
+**Deep dive:** [LONG_FORM_SCALING.md](LONG_FORM_SCALING.md)
+
+---
+
+### v0.6 — LLM semantic layer
 
 **Goal:** Natural language control. "Make the drop hit harder." "Follow the bass."
 
@@ -100,7 +120,7 @@ Pure DSP — no video, no LLM, no GPU required.
 
 ---
 
-### v0.6 — Haptics expansion
+### v0.7 — Haptics expansion
 
 **Goal:** Beyond single-axis. Multi-device, multi-channel.
 
