@@ -132,8 +132,6 @@ a = Analysis(
         "IPython",
         "pytest",
         "sphinx",
-        "scipy",
-        "sklearn",
         "tensorflow",
         "torch",
     ],
