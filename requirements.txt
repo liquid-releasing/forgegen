@@ -6,3 +6,4 @@ pandas>=2.0.0
 # pip install -r requirements.txt is never surprised by missing analysis deps.
 librosa>=0.10
 videoflow[audio] @ git+https://github.com/liquid-releasing/videoflow.git
+forge-ui-components @ git+https://github.com/liquid-releasing/forge-ui-components.git

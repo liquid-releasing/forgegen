@@ -11,6 +11,9 @@ from pathlib import Path
 
 import streamlit as st
 
+from forgegen_core.about import VERSION as _FORGEGEN_VERSION
+from forgegen_core.analysis_sidecar import write_analysis_sidecar
+
 # ---------------------------------------------------------------------------
 # Style presets
 # ---------------------------------------------------------------------------
@@ -629,6 +632,27 @@ def render() -> None:
                     out_path = out_dir / filename
                     out_path.write_bytes(st.session_state.funscript_bytes)
                     st.session_state.saved_path = str(out_path)
+
+                    # Companion <stem>.analysis.json sidecar (v0.1: chapters
+                    # only). See docs/architecture/funscriptforge-handoff.md.
+                    # Sidecar failure is non-fatal — the funscript is the
+                    # primary artifact.
+                    src_str = st.session_state.last_analysed_path or ""
+                    src_path = Path(src_str) if src_str else None
+                    try:
+                        sidecar_path = write_analysis_sidecar(
+                            out_path,
+                            source_path=src_path,
+                            audio_name=st.session_state.audio_name or filename,
+                            duration_ms=st.session_state.beat_map.duration_ms,
+                            forgegen_version=_FORGEGEN_VERSION,
+                        )
+                        st.session_state.saved_sidecar = str(sidecar_path)
+                    except Exception as exc:
+                        st.session_state.saved_sidecar = None
+                        st.warning(
+                            f"Funscript saved, analysis sidecar failed: {exc}"
+                        )
                 except Exception as exc:
                     st.error(f"Save failed: {exc}")
 
@@ -643,4 +667,7 @@ def render() -> None:
 
             # Show saved path
             if st.session_state.saved_path:
-                st.success(f"Saved → `{st.session_state.saved_path}`")
+                msg = f"Saved → `{st.session_state.saved_path}`"
+                if st.session_state.get("saved_sidecar"):
+                    msg += f"\n\nAnalysis sidecar → `{st.session_state.saved_sidecar}`"
+                st.success(msg)

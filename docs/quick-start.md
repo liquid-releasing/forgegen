@@ -37,6 +37,11 @@ Your browser opens at `http://localhost:8501`.
 
 In the sidebar, click **Browse files** (or drag and drop) and select any MP3, WAV, FLAC, or other supported audio file.
 
+!!! note "v0.1 length limit"
+    forgegen v0.1 expects media under **~10 minutes**. Longer files may stall on
+    the librosa tempogram step. Chapter-aware long-form processing arrives in
+    v0.5 — see [LONG_FORM_SCALING](https://github.com/liquid-releasing/forgegen/blob/main/architecture/LONG_FORM_SCALING.md).
+
 forgegen immediately analyses the file — detecting the beat grid, BPM, phrase boundaries, and energy. This takes a few seconds. When done, the sidebar shows:
 
 - **BPM** — detected tempo
@@ -70,11 +75,22 @@ forgegen builds the motion curve and displays a preview chart — position (0–
 
 ---
 
-## 6. Download
+## 6. Save or download
 
-Click **💾 Download .funscript**.
+You have two options when generation completes:
 
-The file is named after your audio file (e.g. `my-track.funscript`). Load it into FunScriptForge for refinement, or directly into a player.
+- **💾 Save to folder** — writes the funscript to your configured output folder
+  *and* emits a companion `<stem>.analysis.json` sidecar with the analysis
+  context (chapters, source identity, generator metadata). Downstream tools
+  like FunScriptForge pick the sidecar up automatically.
+- **⬇ Download** — browser download of just the `.funscript`. Use this when
+  you only need the curve.
+
+The file is named after your audio file (e.g. `my-track.funscript` /
+`my-track.analysis.json`). Load it into FunScriptForge for refinement, or
+directly into a player.
+
+See [Analysis output](reference/analysis-output.md) for what the sidecar contains and why.
 
 ---
 

@@ -48,6 +48,12 @@ Pure DSP — no video, no LLM, no GPU required.
 - [ ] Blend estim path into the same UI as music path
 - [ ] Export: single-channel funscript for estim devices
 
+Open questions
+
+- [ ] Can or should we output alpha and beta (left right) funscripts channels corresponding to the left right channels in the music
+- [ ] Does this technique provide emphasis on beats. And do we add this as optional for the user?
+- [ ] Does this export a beat map (json or metadata to be used in other forge apps?) so we can align features (such as events) to a nearby beat?
+
 **What this replaces:** Manual Audacity + Python workflows. No existing tool does this cleanly.
 
 ---

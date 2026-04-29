@@ -19,7 +19,7 @@ __all__ = [
     "about_text",
 ]
 
-VERSION = "0.0.1"
+VERSION = "0.1.0-alpha"
 APP_NAME = "ForgeGen"
 TAGLINE = "Generate funscripts from audio in seconds — a local desktop app."
 

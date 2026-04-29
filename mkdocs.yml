@@ -27,6 +27,7 @@ nav:
     - Styles: reference/styles.md
     - Phrase Modes: reference/modes.md
     - Supported Formats: reference/formats.md
+    - Analysis output: reference/analysis-output.md
   - CLI & Automation:
     - CLI Reference: cli/index.md
     - Pipeline Integration: cli/automation.md

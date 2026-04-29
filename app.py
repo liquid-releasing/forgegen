@@ -423,6 +423,11 @@ elif st.session_state.beat_map is None:
         "Supports: MP3, WAV, FLAC, OGG, M4A, AAC — and MP4/MKV/MOV "
         "(audio is extracted automatically)."
     )
+    st.caption(
+        "**v0.1 expects media under ~10 minutes.** Longer files may stall on "
+        "the librosa tempogram step; chapter-aware long-form support arrives "
+        "in v0.5 (see [LONG_FORM_SCALING.md](https://github.com/liquid-releasing/forgegen/blob/main/architecture/LONG_FORM_SCALING.md))."
+    )
 else:
     # --- Analysis summary panel — what we found ---
     bm = st.session_state.beat_map

@@ -64,11 +64,34 @@ Below the chart:
 
 ---
 
-## Download
+## Save or download
 
-Click **💾 Download .funscript** to save the file. The filename is derived from your audio file's name (e.g. uploading `artist-track.mp3` produces `artist-track.funscript`).
+Two buttons, two modes:
 
-The downloaded file is a standard funscript JSON and can be loaded into:
+### 💾 Save to folder
+
+Writes both files to the output directory configured in the sidebar:
+
+- `<stem>.funscript` — standard funscript JSON
+- `<stem>.analysis.json` — companion sidecar with analysis context
+
+The sidecar carries the v1.0 [analysis schema](../architecture/analysis-schema.md):
+generator identity, source identity (path, duration, partial-MD5), and
+structural information (chapter proposals from embedded mp4 chapters or a
+`<stem>.chapters.json` sidecar — empty array when neither is present).
+
+When FunScriptForge or another forge-family tool opens the funscript, the
+sidecar is auto-detected and the chapter context is loaded with no re-analysis
+of the source media. See [Analysis output](../reference/analysis-output.md).
+
+### ⬇ Download
+
+Browser download of the `.funscript` only. Use when you don't need the analysis
+context — for example, when handing the curve to a non-forge player.
+
+### Compatible consumers
+
+The downloaded `.funscript` is standard JSON and can be loaded into:
 
 - FunScriptForge (for editing and device-specific export)
 - SyncPlayer (for playback with a connected device)
