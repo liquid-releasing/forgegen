@@ -13,6 +13,10 @@
       
       
       
+        <link rel="prev" href="../formats/">
+      
+      
+        <link rel="next" href="../../cli/">
       
       
         
@@ -23,7 +27,7 @@
     
     
       
-        <title>Chapters vs Events — What They Each Need - forgegen</title>
+        <title>Analysis output - forgegen</title>
       
     
     
@@ -72,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#chapters-vs-events-what-they-each-need" class="md-skip">
+        <a href="#analysis-output" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Chapters vs Events — What They Each Need
+              Analysis output
             
           </span>
         </div>
@@ -254,11 +258,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../reference/styles/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../styles/" class="md-tabs__link">
           
   
   
@@ -571,26 +577,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -608,7 +619,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -626,7 +637,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/styles/" class="md-nav__link">
+      <a href="../styles/" class="md-nav__link">
         
   
   
@@ -654,7 +665,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/modes/" class="md-nav__link">
+      <a href="../modes/" class="md-nav__link">
         
   
   
@@ -682,7 +693,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/formats/" class="md-nav__link">
+      <a href="../formats/" class="md-nav__link">
         
   
   
@@ -707,10 +718,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../reference/analysis-output/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analysis output
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -726,6 +764,143 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-forgegen-analyses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What forgegen analyses
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What forgegen analyses">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layer-1-audio-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 1 — audio features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layer-2-structural-inferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 2 — structural inferences
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layer-4-generation-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer 4 — generation decisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-gets-exported" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What gets exported
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What gets exported">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stemfunscript" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        &lt;stem&gt;.funscript
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stemanalysisjson-companion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        &lt;stem&gt;.analysis.json (companion)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="&lt;stem&gt;.analysis.json (companion)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#whats-coming-in-future-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's coming in future versions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-the-sidecar-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the sidecar exists
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -967,33 +1142,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-comparison" class="md-nav__link">
+  <a href="#what-forgegen-analyses" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Quick comparison
+        What forgegen analyses
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-chapters-need" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What chapters need
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="What chapters need">
+    <nav class="md-nav" aria-label="What forgegen analyses">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#authoring-workflow" class="md-nav__link">
+  <a href="#layer-1-audio-features" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Authoring workflow
+        Layer 1 — audio features
       
     </span>
   </a>
@@ -1001,10 +1165,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#failure-tolerance" class="md-nav__link">
+  <a href="#layer-2-structural-inferences" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Failure tolerance
+        Layer 2 — structural inferences
       
     </span>
   </a>
@@ -1012,10 +1176,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#output-shape" class="md-nav__link">
+  <a href="#layer-4-generation-decisions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Output shape
+        Layer 4 — generation decisions
       
     </span>
   </a>
@@ -1028,22 +1192,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-events-need" class="md-nav__link">
+  <a href="#what-gets-exported" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What events need
+        What gets exported
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="What events need">
+    <nav class="md-nav" aria-label="What gets exported">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#authoring-workflow_1" class="md-nav__link">
+  <a href="#stemfunscript" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Authoring workflow
+        &lt;stem&gt;.funscript
       
     </span>
   </a>
@@ -1051,21 +1215,22 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#failure-tolerance_1" class="md-nav__link">
+  <a href="#stemanalysisjson-companion" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Failure tolerance
+        &lt;stem&gt;.analysis.json (companion)
       
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="&lt;stem&gt;.analysis.json (companion)">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#output-shape_1" class="md-nav__link">
+  <a href="#whats-coming-in-future-versions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Output shape
+        What's coming in future versions
       
     </span>
   </a>
@@ -1076,45 +1241,17 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#shared-ux-the-bridge" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Shared UX (the bridge)
-      
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#implications-for-forgevents-design" class="md-nav__link">
+  <a href="#why-the-sidecar-exists" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Implications for forgevents design
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#implications-for-forgegen" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Implications for forgegen
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cross-references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Cross-references
+        Why the sidecar exists
       
     </span>
   </a>
@@ -1138,199 +1275,91 @@
 
 
 
-<h1 id="chapters-vs-events-what-they-each-need">Chapters vs Events — What They Each Need<a class="headerlink" href="#chapters-vs-events-what-they-each-need" title="Permanent link">&para;</a></h1>
+<h1 id="analysis-output">Analysis output<a class="headerlink" href="#analysis-output" title="Permanent link">&para;</a></h1>
+<p>When you click <strong>Analyse</strong>, forgegen runs a multi-stage pipeline that builds a layered understanding of your media. The visible result is a <code>.funscript</code> — but the <strong>full</strong> analysis is preserved in a companion <code>&lt;stem&gt;.analysis.json</code> sidecar so downstream tools don't have to re-derive any of it.</p>
+<p>This page explains what forgegen considers and what it writes.</p>
+<hr />
+<h2 id="what-forgegen-analyses">What forgegen analyses<a class="headerlink" href="#what-forgegen-analyses" title="Permanent link">&para;</a></h2>
+<h3 id="layer-1-audio-features">Layer 1 — audio features<a class="headerlink" href="#layer-1-audio-features" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Beat grid</strong> — every beat detected by <code>librosa</code>'s <code>beat_track</code> (fast, deterministic) or <code>plp</code> (predominant local pulse — robust on long or genre-bending tracks). The detector is auto-selected based on track length.</li>
+<li><strong>BPM</strong> — derived from the beat grid.</li>
+<li><strong>Downbeats</strong> — every 4th beat (v0.1 assumes 4/4 time).</li>
+<li><strong>Per-beat energy</strong> — RMS energy at each beat, normalised 0–1. Peaks tend to land on kicks and snares.</li>
+<li><strong>Phrases</strong> — every 16 beats grouped into one phrase (4 bars × 4/4). The unit forgegen uses for mode classification.</li>
+</ul>
+<h3 id="layer-2-structural-inferences">Layer 2 — structural inferences<a class="headerlink" href="#layer-2-structural-inferences" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Phrase mode</strong> — each phrase is auto-classified as one of <code>break</code>, <code>tease</code>, <code>slow</code>, <code>steady</code>, <code>fast</code>, or <code>edging</code> based on energy profile and BPM context. See <a href="../modes/">Phrase Modes</a>.</li>
+<li><strong>Energy trend per phrase</strong> — rising, falling, flat, or arc-shaped.</li>
+<li>
+<p><strong>Chapters</strong> — read from:</p>
+<ol>
+<li>Embedded mp4 chapters (via <code>ffprobe -show_chapters</code>)</li>
+<li>A <code>&lt;stem&gt;.chapters.json</code> sidecar next to the source</li>
+</ol>
+<p>Audio auto-detection from silences/structural similarity is v0.5 scope and not done in v0.1. If neither source has chapters, the chapter list is simply empty.</p>
+</li>
+</ul>
+<h3 id="layer-4-generation-decisions">Layer 4 — generation decisions<a class="headerlink" href="#layer-4-generation-decisions" title="Permanent link">&para;</a></h3>
+<p>When you pick a style and click <strong>Generate</strong>, forgegen records the choices it made:</p>
+<ul>
+<li><strong>Style</strong> — Rhythmic / Sensual / Intense / Chaotic (sets <code>low</code>, <code>high</code>, beat source)</li>
+<li><strong>Stroke density</strong> — 1, 2, 4, or 8 strokes per beat</li>
+<li><strong>Tone trajectory</strong> — flat / rise / fall / auto</li>
+<li><strong>Energy normalization</strong> — the 95th-percentile energy used to scale peak amplitude consistently across tracks</li>
+</ul>
 <blockquote>
-<p>Both are timeline overlays authored in the same tool (forgevents),
-but they have meaningfully different shapes, granularities, workflows,
-and failure modes. This doc captures those differences so the
-forgevents UX and forgegen's analysis output don't blur them together.</p>
+<p><strong>Layer 3 (event proposals)</strong> — auto-detected accents, edge holds, climax candidates — is v0.5+ scope. v0.1 emits an empty proposal list.</p>
 </blockquote>
-<h2 id="quick-comparison">Quick comparison<a class="headerlink" href="#quick-comparison" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Dimension</th>
-<th>Chapters</th>
-<th>Events</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Granularity</td>
-<td>~5–15 minutes per chapter</td>
-<td>~milliseconds to seconds per event</td>
-</tr>
-<tr>
-<td>Density</td>
-<td>7–25 per long-form track</td>
-<td>dozens to hundreds per track</td>
-</tr>
-<tr>
-<td>Shape</td>
-<td>Durational (start_ms + end_ms)</td>
-<td>Point or short-duration</td>
-</tr>
-<tr>
-<td>Carries</td>
-<td>Intent label (build / sustain / edge / climax / recover)</td>
-<td>Type + parameters (edge_hold, accent, vocal_cue, etc.)</td>
-</tr>
-<tr>
-<td>Failure tolerance</td>
-<td>Off by 1–5 seconds = fine</td>
-<td>Off by 50–200 ms = wrong feel</td>
-</tr>
-<tr>
-<td>Auto-finder relies on</td>
-<td>Energy / spectral / mode shifts at coarse scale</td>
-<td>Onset peaks, pitch peaks, vocal events at fine scale</td>
-</tr>
-<tr>
-<td>Editing scale</td>
-<td>Whole-track timeline overview</td>
-<td>Zoomed-in inspection of specific moments</td>
-</tr>
-<tr>
-<td>Coverage</td>
-<td>Tile the entire track end-to-end</td>
-<td>Sparse — only at moments of interest</td>
-</tr>
-<tr>
-<td>Function</td>
-<td>Structural — sets the <em>narrative arc</em></td>
-<td>Nuance — adds the <em>texture</em> on top of the arc</td>
-</tr>
-</tbody>
-</table>
-<h2 id="what-chapters-need">What chapters need<a class="headerlink" href="#what-chapters-need" title="Permanent link">&para;</a></h2>
-<p><strong>Chapters partition the track into intent-bearing segments.</strong> Authoring
-them is fundamentally about <em>boundary placement</em> and <em>labelling</em>.</p>
-<h3 id="authoring-workflow">Authoring workflow<a class="headerlink" href="#authoring-workflow" title="Permanent link">&para;</a></h3>
-<ol>
-<li>Listen / watch the whole track at moderate speed</li>
-<li>Auto-finder proposes boundaries (energy drops, scene changes, mode shifts)</li>
-<li>Review proposals at the timeline-overview level</li>
-<li>Adjust boundaries — usually by seconds, occasionally by tens of seconds</li>
-<li>Assign intent label per chapter (intro / build / sustain / edge / climax / recover / outro)</li>
-<li>Assign per-chapter character + tone shape (the three-dropdown design)</li>
-</ol>
-<h3 id="failure-tolerance">Failure tolerance<a class="headerlink" href="#failure-tolerance" title="Permanent link">&para;</a></h3>
-<p><strong>Chapter boundaries can be off by 1–5 seconds without anyone noticing.</strong>
-The downstream curve generator smooths transitions across boundaries,
-and the artist's intent at chapter scale is robust to small placement
-errors. This means:</p>
-<ul>
-<li>Auto-finders can be coarse (10 ms onset precision is irrelevant)</li>
-<li>Manual editing can be done at low-zoom timeline view</li>
-<li>Hotkey workflows can step in 1–5 second increments</li>
-</ul>
-<h3 id="output-shape">Output shape<a class="headerlink" href="#output-shape" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;chapters&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;start_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;end_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">90000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;intent&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;intro&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="nt">&quot;character&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;beat-driven&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;tone&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rise&quot;</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;start_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">90000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;end_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">480000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;intent&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;build&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">      </span><span class="nt">&quot;character&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;beat-driven&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;tone&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;auto&quot;</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="err">...</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="p">]</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">}</span>
+<hr />
+<h2 id="what-gets-exported">What gets exported<a class="headerlink" href="#what-gets-exported" title="Permanent link">&para;</a></h2>
+<h3 id="stemfunscript"><code>&lt;stem&gt;.funscript</code><a class="headerlink" href="#stemfunscript" title="Permanent link">&para;</a></h3>
+<p>Standard funscript JSON. Just the curve — <code>actions: [{at, pos}, ...]</code>. Nothing forge-specific.</p>
+<h3 id="stemanalysisjson-companion"><code>&lt;stem&gt;.analysis.json</code> (companion)<a class="headerlink" href="#stemanalysisjson-companion" title="Permanent link">&para;</a></h3>
+<p>Written next to the funscript when you click <strong>Save to folder</strong> (browser download path is funscript-only). Minimal in v0.1:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>{
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  &quot;version&quot;: &quot;1.0&quot;,
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  &quot;generated_by&quot;: {
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    &quot;tool&quot;: &quot;forgegen&quot;,
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    &quot;tool_version&quot;: &quot;0.1.0-alpha&quot;,
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    &quot;videoflow_version&quot;: &quot;0.0.5-alpha&quot;,
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    &quot;generated_at&quot;: &quot;2026-04-29T19:25:02Z&quot;
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  },
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  &quot;source&quot;: {
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    &quot;audio_path&quot;: &quot;track.mp4&quot;,
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    &quot;duration_ms&quot;: 279777,
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    &quot;audio_md5&quot;: &quot;8072d2881c179a94b4cef99ba3b834e1&quot;
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>  },
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>  &quot;structural&quot;: {
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    &quot;chapter_proposals&quot;: [
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>      // empty when source has no embedded chapters and no .chapters.json sidecar
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    ]
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>  }
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>}
 </code></pre></div>
-<p>Tiles the entire track end-to-end (every millisecond is in some chapter).</p>
-<h2 id="what-events-need">What events need<a class="headerlink" href="#what-events-need" title="Permanent link">&para;</a></h2>
-<p><strong>Events are point-in-time or short-duration markers that overlay
-modulation on the curve.</strong> Authoring is fundamentally about <em>exact
-moment selection</em> and <em>type assignment</em>.</p>
-<h3 id="authoring-workflow_1">Authoring workflow<a class="headerlink" href="#authoring-workflow_1" title="Permanent link">&para;</a></h3>
-<ol>
-<li>Auto-finder proposes candidate events (onset peaks, sustained-energy
-   peaks for edges, vocal cues, etc.)</li>
-<li>Each candidate is reviewed <em>individually</em> — zoomed in on its moment</li>
-<li>Adjust timestamp by milliseconds to land exactly right</li>
-<li>Confirm or reject the type</li>
-<li>Optionally add parameters (duration for edge_hold, intensity for accent)</li>
-<li>Add new events from scratch in the same drilled-in mode</li>
-</ol>
-<h3 id="failure-tolerance_1">Failure tolerance<a class="headerlink" href="#failure-tolerance_1" title="Permanent link">&para;</a></h3>
-<p><strong>Events off by 50–200 ms feel wrong.</strong> A vocal cue mistimed by 100 ms
-lands on the wrong syllable; an accent off by 200 ms misses the hit.
-This means:</p>
+<p>The <code>audio_md5</code> is a partial hash (first + last 1MB) — sufficient for downstream cache invalidation, cheap on long files.</p>
+<h4 id="whats-coming-in-future-versions">What's coming in future versions<a class="headerlink" href="#whats-coming-in-future-versions" title="Permanent link">&para;</a></h4>
+<p>The schema is forward-compatible. Later releases will additively populate:</p>
 <ul>
-<li>Auto-finders need millisecond precision (frame-accurate)</li>
-<li>Manual editing requires high-zoom timeline view</li>
-<li>Hotkey workflows need frame-step (single-frame increments) and audio
-  scrubbing</li>
-<li>Snap helpers (snap to nearest onset, beat, zero-crossing) are
-  essential for hitting the right moment</li>
+<li><code>audio_features</code> — bpm, beats, energy, phrases (so FunScriptForge skips re-analysis)</li>
+<li><code>video_features</code> — scene changes, motion energy (when video path lands in v0.3)</li>
+<li><code>event_proposals</code> — accents, edge holds, climax candidates (v0.5+ when forgevents arrives)</li>
+<li><code>generation_choices</code> — exactly which style/density/tone produced this curve</li>
 </ul>
-<h3 id="output-shape_1">Output shape<a class="headerlink" href="#output-shape_1" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;events&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;at_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12000</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;edge_hold&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;duration_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3000</span><span class="p">,</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">&quot;confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.78</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;at_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">24500</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;accent&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;params&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;intensity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.92</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;at_ms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">31200</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;vocal_cue&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;params&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;kind&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;moan&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="err">...</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="p">]</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">}</span>
-</code></pre></div>
-<p>Sparse — only at moments of interest. Most of the track has no events.</p>
-<h2 id="shared-ux-the-bridge">Shared UX (the bridge)<a class="headerlink" href="#shared-ux-the-bridge" title="Permanent link">&para;</a></h2>
-<p>Despite the differences above, <strong>both authoring flows need the same
-foundation</strong>:</p>
+<p>Tools that read v1.0 today keep working: missing optional sections are simply ignored.</p>
+<p>The full schema lives in <a href="../../architecture/analysis-schema/">analysis-schema.md</a>.</p>
+<hr />
+<h2 id="why-the-sidecar-exists">Why the sidecar exists<a class="headerlink" href="#why-the-sidecar-exists" title="Permanent link">&para;</a></h2>
+<p>The principle is <strong>canonical-emit</strong> — every analysis-derived value lives in one place and every downstream tool reads it instead of recomputing.</p>
+<p>What that buys you in practice:</p>
 <ul>
-<li>Frame-accurate side-by-side audio + video player</li>
-<li>HH:MM:SS.mmm timecode display</li>
-<li>Frame-step hotkeys</li>
-<li>Audio scrubbing (slow-playback for ear-finding)</li>
-<li>Auto-finder for candidates</li>
-<li>Hotkey-driven curate-don't-create workflow</li>
+<li><strong>FunScriptForge</strong> opens a funscript and finds the same chapters forgegen used — no re-analysis pass.</li>
+<li><strong>ForgePlayer</strong> can show those chapters as visual markers during playback.</li>
+<li><strong>forgevents</strong> (planned) consumes auto-detected event proposals as starting candidates for human curation.</li>
+<li><strong>Future ML</strong> uses paired <code>&lt;funscript, analysis.json&gt;</code> as labeled training data.</li>
 </ul>
-<p>That foundation is forgevents. Within it, the editing surface adapts:</p>
-<ul>
-<li><strong>Chapters mode</strong>: timeline overview, low zoom, boundary handles between
-  chapter blocks, intent dropdowns per block</li>
-<li><strong>Events mode</strong>: zoomed-in moment view, point markers on a fine timeline,
-  type palette + parameter editor</li>
-<li><strong>Toggle freely</strong> — same project, same player, same auto-found analysis;
-  the artist switches between editing modes as their attention shifts</li>
-</ul>
-<h2 id="implications-for-forgevents-design">Implications for forgevents design<a class="headerlink" href="#implications-for-forgevents-design" title="Permanent link">&para;</a></h2>
-<ol>
-<li><strong>Two editing modes, not two products.</strong> Chapters and events share
-   the player, the auto-finder, the file. Different views into the same
-   timeline.</li>
-<li><strong>Auto-finder runs once, classifies into both buckets.</strong> The same
-   onset / energy / spectral analysis pass produces chapter boundary
-   candidates <em>and</em> event candidates; users curate them in their
-   respective modes.</li>
-<li><strong>Output is a single analysis-aware artifact</strong>, with both <code>chapters</code>
-   and <code>events</code> sections. Per the analysis-layer spec, this lives in
-   funscript metadata or a paired <code>track.analysis.json</code>.</li>
-<li><strong>Zoom-aware UI</strong> — the timeline supports rapid switching between
-   whole-track view (chapters) and ±2-second view (events). One
-   keystroke.</li>
-</ol>
-<h2 id="implications-for-forgegen">Implications for forgegen<a class="headerlink" href="#implications-for-forgegen" title="Permanent link">&para;</a></h2>
-<p>When forgegen produces analysis JSON during generation, it should
-populate <strong>both</strong> chapter proposals <em>and</em> event proposals — not just
-chapters. The auto-finder logic for events overlaps significantly with
-the structural detection used for chapter proposals; both come from the
-same audio analysis pass and shouldn't be split into two pipelines.</p>
-<p>Schema should reserve fields for both:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;structural&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;chapter_proposals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]</span><span class="w"> </span><span class="p">},</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;event_proposals&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">}</span>
-</code></pre></div>
-<p>Even if forgevents is the tool that ultimately curates and finalises,
-forgegen does the heavy lifting of finding candidates from audio.</p>
-<h2 id="cross-references">Cross-references<a class="headerlink" href="#cross-references" title="Permanent link">&para;</a></h2>
-<ul>
-<li>forgevents product spec (private memory): <code>project_forgevents_planned.md</code></li>
-<li>Chapter composition: <code>chapter-composition.md</code></li>
-<li>Architecture considerations: <code>architecture-considerations.md</code></li>
-<li>Beat integration: <code>beats.md</code></li>
-</ul>
+<p>See <a href="../../architecture/canonical-emit-pattern/">canonical-emit-pattern.md</a> for the full architectural rationale and how it applies across the forge tool family.</p>
 
 
 

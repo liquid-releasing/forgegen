@@ -626,13 +626,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#download" class="md-nav__link">
+  <a href="#save-or-download" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Download
+        Save or download
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Save or download">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#save-to-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💾 Save to folder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#download" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ⬇ Download
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compatible-consumers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatible consumers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -803,6 +842,34 @@
     
   
     Supported Formats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/analysis-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analysis output
   
 
     
@@ -1096,13 +1163,52 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#download" class="md-nav__link">
+  <a href="#save-or-download" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Download
+        Save or download
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Save or download">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#save-to-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💾 Save to folder
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#download" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ⬇ Download
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compatible-consumers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compatible consumers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1229,9 +1335,26 @@
 <li><strong>Duration</strong> — track length in seconds</li>
 </ul>
 <hr />
-<h2 id="download">Download<a class="headerlink" href="#download" title="Permanent link">&para;</a></h2>
-<p>Click <strong>💾 Download .funscript</strong> to save the file. The filename is derived from your audio file's name (e.g. uploading <code>artist-track.mp3</code> produces <code>artist-track.funscript</code>).</p>
-<p>The downloaded file is a standard funscript JSON and can be loaded into:</p>
+<h2 id="save-or-download">Save or download<a class="headerlink" href="#save-or-download" title="Permanent link">&para;</a></h2>
+<p>Two buttons, two modes:</p>
+<h3 id="save-to-folder">💾 Save to folder<a class="headerlink" href="#save-to-folder" title="Permanent link">&para;</a></h3>
+<p>Writes both files to the output directory configured in the sidebar:</p>
+<ul>
+<li><code>&lt;stem&gt;.funscript</code> — standard funscript JSON</li>
+<li><code>&lt;stem&gt;.analysis.json</code> — companion sidecar with analysis context</li>
+</ul>
+<p>The sidecar carries the v1.0 <a href="../../architecture/analysis-schema/">analysis schema</a>:
+generator identity, source identity (path, duration, partial-MD5), and
+structural information (chapter proposals from embedded mp4 chapters or a
+<code>&lt;stem&gt;.chapters.json</code> sidecar — empty array when neither is present).</p>
+<p>When FunScriptForge or another forge-family tool opens the funscript, the
+sidecar is auto-detected and the chapter context is loaded with no re-analysis
+of the source media. See <a href="../../reference/analysis-output/">Analysis output</a>.</p>
+<h3 id="download">⬇ Download<a class="headerlink" href="#download" title="Permanent link">&para;</a></h3>
+<p>Browser download of the <code>.funscript</code> only. Use when you don't need the analysis
+context — for example, when handing the curve to a non-forge player.</p>
+<h3 id="compatible-consumers">Compatible consumers<a class="headerlink" href="#compatible-consumers" title="Permanent link">&para;</a></h3>
+<p>The downloaded <code>.funscript</code> is standard JSON and can be loaded into:</p>
 <ul>
 <li>FunScriptForge (for editing and device-specific export)</li>
 <li>SyncPlayer (for playback with a connected device)</li>

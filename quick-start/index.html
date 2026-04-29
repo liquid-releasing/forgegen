@@ -525,10 +525,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-download" class="md-nav__link">
+  <a href="#6-save-or-download" class="md-nav__link">
     <span class="md-ellipsis">
       
-        6. Download
+        6. Save or download
       
     </span>
   </a>
@@ -833,6 +833,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/analysis-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analysis output
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1124,10 +1152,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-download" class="md-nav__link">
+  <a href="#6-save-or-download" class="md-nav__link">
     <span class="md-ellipsis">
       
-        6. Download
+        6. Save or download
       
     </span>
   </a>
@@ -1187,6 +1215,12 @@ See <a href="../installation/#ffmpeg">Installation → FFmpeg</a>.</p>
 <hr />
 <h2 id="3-load-an-audio-file">3. Load an audio file<a class="headerlink" href="#3-load-an-audio-file" title="Permanent link">&para;</a></h2>
 <p>In the sidebar, click <strong>Browse files</strong> (or drag and drop) and select any MP3, WAV, FLAC, or other supported audio file.</p>
+<div class="admonition note">
+<p class="admonition-title">v0.1 length limit</p>
+<p>forgegen v0.1 expects media under <strong>~10 minutes</strong>. Longer files may stall on
+the librosa tempogram step. Chapter-aware long-form processing arrives in
+v0.5 — see <a href="https://github.com/liquid-releasing/forgegen/blob/main/architecture/LONG_FORM_SCALING.md">LONG_FORM_SCALING</a>.</p>
+</div>
 <p>forgegen immediately analyses the file — detecting the beat grid, BPM, phrase boundaries, and energy. This takes a few seconds. When done, the sidebar shows:</p>
 <ul>
 <li><strong>BPM</strong> — detected tempo</li>
@@ -1233,9 +1267,20 @@ See <a href="../installation/#ffmpeg">Installation → FFmpeg</a>.</p>
 <p>Click <strong>▶ Generate</strong>.</p>
 <p>forgegen builds the motion curve and displays a preview chart — position (0–100) over time. Below the chart you'll see the action count and track duration.</p>
 <hr />
-<h2 id="6-download">6. Download<a class="headerlink" href="#6-download" title="Permanent link">&para;</a></h2>
-<p>Click <strong>💾 Download .funscript</strong>.</p>
-<p>The file is named after your audio file (e.g. <code>my-track.funscript</code>). Load it into FunScriptForge for refinement, or directly into a player.</p>
+<h2 id="6-save-or-download">6. Save or download<a class="headerlink" href="#6-save-or-download" title="Permanent link">&para;</a></h2>
+<p>You have two options when generation completes:</p>
+<ul>
+<li><strong>💾 Save to folder</strong> — writes the funscript to your configured output folder
+  <em>and</em> emits a companion <code>&lt;stem&gt;.analysis.json</code> sidecar with the analysis
+  context (chapters, source identity, generator metadata). Downstream tools
+  like FunScriptForge pick the sidecar up automatically.</li>
+<li><strong>⬇ Download</strong> — browser download of just the <code>.funscript</code>. Use this when
+  you only need the curve.</li>
+</ul>
+<p>The file is named after your audio file (e.g. <code>my-track.funscript</code> /
+<code>my-track.analysis.json</code>). Load it into FunScriptForge for refinement, or
+directly into a player.</p>
+<p>See <a href="../reference/analysis-output/">Analysis output</a> for what the sidecar contains and why.</p>
 <hr />
 <h2 id="whats-next">What's next?<a class="headerlink" href="#whats-next" title="Permanent link">&para;</a></h2>
 <ul>
