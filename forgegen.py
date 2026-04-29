@@ -32,6 +32,7 @@ APP_HEIGHT = 820
 STREAMLIT_HOST = "127.0.0.1"
 
 _here = Path(__file__).resolve().parent
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 
 # ── Streamlit runner (bundled path) ───────────────────────────────────
@@ -74,7 +75,7 @@ def _spawn_streamlit_dev(port: int, script: str) -> subprocess.Popen:
         f"--server.port={port}",
         f"--server.address={STREAMLIT_HOST}",
     ]
-    return subprocess.Popen(cmd, cwd=str(_here), env=env)
+    return subprocess.Popen(cmd, cwd=str(_here), env=env, creationflags=_NO_WINDOW)
 
 
 def _free_port(preferred: int = 0) -> int:
@@ -177,6 +178,7 @@ def main() -> int:
         proc = subprocess.Popen(
             [sys.executable, RUN_STREAMLIT_FLAG, str(streamlit_port), ui_script],
             env=env,
+            creationflags=_NO_WINDOW,
         )
     else:
         proc = _spawn_streamlit_dev(streamlit_port, ui_script)

@@ -32,9 +32,11 @@ from videoflow.audio import AudioBeatMap
 from videoflow.generate import beats_to_curve, compute_auto_tone
 
 import subprocess
+import sys
 from pathlib import Path
 
 _VIDEO_SUFFIXES = {".mp4", ".mkv", ".mov", ".avi", ".webm", ".m4v"}
+_NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -190,6 +192,7 @@ def _extract_video_frame(video_path: str, time_ms: int) -> bytes | None:
             check=True,
             capture_output=True,
             timeout=10,
+            creationflags=_NO_WINDOW,
         )
     except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return None
