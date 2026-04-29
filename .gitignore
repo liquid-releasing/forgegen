@@ -52,6 +52,7 @@ site/
 *.pdf
 internal/
 testcases/
+test_funscript/
 
 # Streamlit local state
 .streamlit/secrets.toml
