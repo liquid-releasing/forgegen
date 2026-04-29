@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/forgegen_horizontal.png" alt="forgegen" width="640" />
+</p>
+
 # forgegen
 
 **Audio and video to funscript — in seconds, not hours.**

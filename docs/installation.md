@@ -1,6 +1,23 @@
 # Installation
 
-## Requirements
+## Standalone app (recommended)
+
+Pre-built desktop installers for Windows, macOS, and Linux are available at
+**[forgegen.app](https://forgegen.app)**. No Python, no FFmpeg install,
+no dependencies — unzip and run.
+
+[Download for Windows](https://github.com/liquid-releasing/forgegen-releases/releases/latest/download/ForgeGen-windows.zip){ .md-button .md-button--primary }
+[Download for macOS](https://github.com/liquid-releasing/forgegen-releases/releases/latest/download/ForgeGen-macos.zip){ .md-button }
+[Download for Linux](https://github.com/liquid-releasing/forgegen-releases/releases/latest/download/ForgeGen-linux.tar.gz){ .md-button }
+
+The rest of this page covers installing **from source** — for developers,
+contributors, or users who want to run the CLI / Python library directly.
+
+---
+
+## From source
+
+### Requirements
 
 - Python 3.10 or newer
 - FFmpeg (required for video files; not needed for audio-only use)
