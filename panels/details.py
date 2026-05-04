@@ -30,7 +30,9 @@ def render() -> None:
     from videoflow.generate import beats_to_curve, classify_modes, shape_curve, export_funscript
 
     if st.session_state.modes is None:
-        st.session_state.modes = classify_modes(bm)
+        st.session_state.modes = classify_modes(
+            bm, chapters=st.session_state.chapters or None,
+        )
 
     # -----------------------------------------------------------------------
     # Advanced controls

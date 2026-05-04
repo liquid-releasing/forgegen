@@ -465,7 +465,9 @@ else:
     bm = st.session_state.beat_map
     if st.session_state.modes is None:
         from videoflow.generate import classify_modes
-        st.session_state.modes = classify_modes(bm)
+        st.session_state.modes = classify_modes(
+            bm, chapters=st.session_state.chapters or None,
+        )
 
     st.markdown("### Analysis")
     st.caption(
