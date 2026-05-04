@@ -18,10 +18,20 @@ captured when an algorithmic decision is made (revert, ship, milestone).
                "p75": 57, "p95": 66, "in_40_60_band_pct": 28.7}}
 ```
 
-The `pos_stats.in_40_60_band_pct` field is the primary drift indicator:
-percentage of curve points inside the dead-zone 40–60 band. Higher = flatter
-output. The pre-Track-A baseline shows Victoria at 28.7% (music; should be
-lower) and ipzz125 at much higher values (ambient; the original complaint).
+**Read in_40_60 with IQR — neither alone is sufficient.** A low
+`in_40_60_band_pct` can mean the curve uses the full stroke range
+(good) *or* sits at the floor with no movement (bad — the original
+complaint). Track shape, not dead-zone density:
+
+- **`pos_stats.p25 / p50 / p75`** → bell-curve location. For a
+  centered model with `center=50`, healthy output has p50 ≈ 50,
+  p25–p75 spread ≥ 30.
+- **IQR (p75 − p25)** → real spread. Baseline ipzz125 had IQR=3 —
+  the curve barely moved. Track B initial had IQR=16 — real stroke
+  movement. Use the IQR delta as the primary drift indicator.
+- **range5-95 (p95 − p5)** → range usage. Healthy values use most
+  of the available range; baseline ipzz125 only used 22 points,
+  Track B used 44.
 
 ## Capturing a new snapshot
 
@@ -54,10 +64,11 @@ Output groups labels into improved / regressed / stable based on
 
 ## Current snapshots
 
-| Snapshot | Defaults | Notes |
+| Snapshot | Pipeline | Notes |
 |---|---|---|
-| `2026-05-04_baseline_forgegen_v0.1.0-alpha.jsonl` | `low=10, high=90, energy_normalize=True, density=2` | The pre-Track-A baseline. 25 runs across music/ambient/hentai/hypnotic/cock-hero. The reference for any future drift comparison. |
-| `2026-05-04_track_a_partial.jsonl` | `low=0, high=100, energy_normalize="log", density=2` | Abandoned Track A run. Music win (Victoria 28.7%→0.8%), ambient regression (ipzz125 84%→96%). Kept as evidence the partial-win path was rejected per the "no shortcuts" guidance. See [`videoflow/docs/architecture/audio-structure-primitive.md`](https://github.com/liquid-releasing/videoflow/blob/main/docs/architecture/audio-structure-primitive.md) for the chosen direction. |
+| `2026-05-04_baseline_forgegen_v0.1.0-alpha.jsonl` | Whole-file analysis. `low=10, high=90, energy_normalize=True, density=2` | The pre-Track-A baseline. 25 runs across music/ambient/hentai/hypnotic/cock-hero. The reference for any future drift comparison. |
+| `2026-05-04_track_a_partial.jsonl` | Whole-file analysis with widened bounds. `low=0, high=100, energy_normalize="log", density=2` | Abandoned Track A run. Music win (Victoria IQR widened) but ambient/hentai regressed to mid-clustered (IQR shrank). Kept as evidence the partial-win path was rejected per the "no shortcuts" guidance. |
+| `2026-05-04_track_b_initial.jsonl` | Chapter-aware analysis. `auto_chapter` → `analyze_beats(chapters=...)` per-chunk energy norm → `classify_modes(chapters=...)` per-chunk thresholds. App defaults unchanged. | Track B v1 — 3-file validation run (victoria/ipzz125/pigeon @ 20min). IQR delta universally positive: +4 / +11 / +13. Baseline ipzz125 had IQR=3 (no movement); Track B has IQR=16 (real strokes). See [`videoflow/docs/architecture/audio-structure-primitive.md`](https://github.com/liquid-releasing/videoflow/blob/main/docs/architecture/audio-structure-primitive.md). Full 25-file sweep is the next bench task. |
 
 ## Why this lives in `architecture/`, not `testcases/`
 
