@@ -52,6 +52,10 @@ st.set_page_config(
 
 _DEFAULTS = dict(
     beat_map=None,
+    chapters=[],            # list[Chapter] — populated by load_chapters /
+                            # auto_chapter during the analysis step. Drives
+                            # per-chunk analyze_beats and the chapter
+                            # progress UI.
     curve=None,
     modes=None,
     funscript_bytes=None,
@@ -359,11 +363,38 @@ if st.session_state.analysis_pending is not None:
 
         try:
             from videoflow.audio import BeatError, analyze_beats
+            from videoflow.chapters import load_chapters
+            from videoflow.structural import AutoChapterError, auto_chapter
+
+            # Easy-button chapter handling: pick up any existing chapters
+            # (mp4-embedded → sidecar → analysis.json), and if none exist,
+            # auto-detect from audio structure. The detection writes a
+            # sidecar so downstream tools (forgeplayer, forgeassembler,
+            # FunscriptForge) reuse the same boundaries — and so the user
+            # can refine them in those editors and have forgegen pick up
+            # the refined version on the next run.
+            chapters = load_chapters(media_path)
+            if chapters is None:
+                _on_stage("Detecting audio structure (chapters)…")
+                try:
+                    chapters = auto_chapter(
+                        media_path, progress_callback=_on_stage,
+                    )
+                    _log(f"auto_chapter -> {len(chapters)} chapter(s)")
+                except AutoChapterError as exc:
+                    # Don't block generation if chapter detection fails —
+                    # fall back to whole-file analysis silently. Easy
+                    # button means the user always gets a funscript.
+                    _log(f"auto_chapter failed (continuing without): {exc}")
+                    chapters = None
+
             beat_map = analyze_beats(
                 media_path,
                 source=st.session_state.source,
                 progress_callback=_on_stage,
+                chapters=chapters,
             )
+            st.session_state.chapters = chapters or []
             elapsed = _time.time() - _start_t
             st.session_state.beat_map = beat_map
             st.session_state.audio_name = name
@@ -371,7 +402,8 @@ if st.session_state.analysis_pending is not None:
             status.write(f"✅ Done in {elapsed:.1f}s")
             _log(
                 f"✅ Done in {elapsed:.1f}s — {beat_map.bpm:.1f} BPM, "
-                f"{len(beat_map.beats)} beats, {len(beat_map.phrases)} phrases"
+                f"{len(beat_map.beats)} beats, {len(beat_map.phrases)} phrases, "
+                f"{len(chapters or [])} chapters"
             )
             status.update(
                 label=(
