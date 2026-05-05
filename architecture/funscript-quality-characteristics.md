@@ -115,21 +115,37 @@ wrong. The reverse — IQR=20 globally because most of the file is
 quiet, with brief IQR=100 climax sections — is structurally correct
 even though the aggregate stat is low.
 
-**Hard to measure objectively:**
+**Chapters are the natural unit (not rolling windows).** Once
+`auto_chapter()` has run, every measurement we apply to the whole
+file can be applied **per chapter** — and chapters represent the
+audio's actual content units, not arbitrary 5-minute slices. This
+gives a much sharper diagnostic:
 
-- Build is a curve-of-curves problem; standard stats over the whole
-  file lose it.
-- Dynamics could be approximated as `IQR(rolling 5-min window).std()`
-  — i.e., does the local IQR vary over time? Wide variation = dynamic
-  script; constant = monotone.
-- Anti-repetition could be approximated by autocorrelation of stroke
-  pattern — repeating loops show as autocorrelation peaks at the loop
-  period.
+- **Per-chapter `pos_stats`** — does this chapter breathe (alive
+  IQR) or sit flat (dead IQR)? Whole-file `IQR=20` could be 30
+  monotone chapters OR a mix of `IQR=10` quiet chapters + `IQR=30`
+  climax chapters; the per-chapter view distinguishes them.
+- **Per-chapter velocity / stroke / actions-per-second** — does the
+  climax chapter actually move faster than the intro chapter? Or is
+  forgegen producing identical speed across all chapters?
+- **Per-chapter forgegen-vs-human delta** — directly identifies
+  *which chapters* forgegen handles well and which ones it doesn't.
+  Wildly more actionable than aggregate gap stats.
 
-**Action item:** worth investigating *rolling-window* stats (per
-5-minute slice) and an `IQR.std()` or `range.std()` summary as a
-"dynamics index" — single number that captures whether the script
-varies over time.
+**Dynamics index = variance of per-chapter IQRs** (or per-chapter
+range, or per-chapter velocity). High variance = dynamic script
+(quiet chapters + climax chapters); low variance = monotone script.
+Same idea as "rolling-window IQR variance" but bound to content
+structure.
+
+**Anti-repetition** is harder; could be approximated per-chapter via
+autocorrelation of the stroke pattern within the chapter.
+
+**Action item:** extend the benchmark harness to compute per-chapter
+stats. Output structure: one JSONL line per (label, chapter), plus
+the existing per-label aggregate. The chapter sidecars already exist
+(via `auto_chapter(write_sidecar=True)`); the funscript actions need
+to be split by chapter timestamp for per-chapter analysis.
 
 ---
 
@@ -231,8 +247,10 @@ Currently captures Dimension 1 (distribution). Should add:
 - Dimension 2 (velocity / stroke / actions-per-second) — straight-
   forward extension of the funscript pos_stats analysis. **Highest
   value addition.**
-- Dimension 3 (rolling-window dynamics) — IQR-over-time summary.
-  Captures whether variation is structured.
+- Dimension 3 (per-chapter dynamics) — per-chapter `pos_stats`,
+  per-chapter velocity, per-chapter forgegen-vs-human delta.
+  Variance of per-chapter IQRs as a "dynamics index." Chapters are
+  the natural granularity since chapter-aware analysis is the lever.
 - Dimension 4 (rhythmic alignment) — already-free using `analyze_beats`
   output.
 - Dimensions 5, 6 — not benchmark-able. Captured by user dogfood and
