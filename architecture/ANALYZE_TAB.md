@@ -41,6 +41,36 @@ card). The "easy button" promise stays intact.
 Read-only visualisation of the v2 sidecar. Loads from
 `videoflow.sidecar.read_sidecar(media_path)`; never writes.
 
+### Depth — what this surfaces vs PythonDancer
+
+PythonDancer's surface is **two whole-file plots**: a pitch line (set
+the tone baseline against the average) and a heatmap (the intensity
+map of the generated script). Both treat the file as one
+undifferentiated stream. Every adjustment is global; every percentile
+is computed against the whole file; one BPM is reported.
+
+Forgegen's Analyze tab is **the visual proof we work at a different
+level**. Same source media, but we segment it, label it, and measure
+each segment against its own context. The ribbons stacked below aren't
+prettier plots — each one is a structural signal PythonDancer doesn't
+extract.
+
+| What PythonDancer shows | What forgegen shows | Why it's deeper |
+|---|---|---|
+| One pitch line | **Chapter ribbon** with content_type + confidence | The audio has structural sections; treating it as one stream averages out everything that distinguishes them. |
+| (no equivalent) | **Phrase ribbon** with six behavioural modes | Per-phrase classification — `tease` / `steady` / `edging` / `break` / `fast` / `slow` — drives mode-aware curve shaping that a single global threshold can't produce. |
+| One heatmap | **Beat-density heatmap** + **energy envelope** | Density and amplitude are separate signals. PD collapses them; we show both, binned over time. |
+| One global BPM | **BPM-per-chapter bars** | Long-form material isn't one tempo. Per-chapter BPM is the lever for chunk-relative classification. |
+| Whole-file Target % | **Per-chapter percentiles** in detail cards | Quiet ambient sections aren't "low energy" relative to their own chapter — they're *normal for that chapter*. Per-chapter normalisation is the lever that fixes the ambient-flat-output failure. |
+| (no equivalent) | **Confidence shading** on chapters | We expose detection uncertainty so the user knows where to look first. |
+| (no equivalent) | **Provenance footer** | Multi-writer audit trail. PD is one-shot; ours rebuilds incrementally with full history. |
+
+The framing on the tab title bar is one line of plain language:
+
+> *"Reads the structure of the audio and generates against that
+> structure — so a 90-minute scene that opens ambient and ends
+> music-driven feels like both, not like the average of them."*
+
 ### Layout
 
 ```
@@ -54,8 +84,8 @@ Read-only visualisation of the v2 sidecar. Loads from
 │  ▢ 2  build       4:51    │  │  ▌▌▌▌▌▌▌▌▌▌▌▌ chapter ribbon ▌▌▌▌    │
 │  ▣ 3  sustain     7:15 ←  │  │  ▎▎▎▎ ▎▎▎▎▎ phrase ribbon ▎▎▎▎▎     │
 │  ▢ 4  edge        5:22    │  │  /\__/\___/\___/\__ energy curve     │
-│  …                        │  │  ▆ ▅ ▇ ▄ ▆ ▅ ▇ ▆ BPM-per-chapter    │
-│  ▢ 38 outro       3:30    │  │                                      │
+│  …                        │  │  ▓▓▒░░▒▓▓▒░▓▓ beat-density heatmap   │
+│  ▢ 38 outro       3:30    │  │  ▆ ▅ ▇ ▄ ▆ ▅ ▇ ▆ BPM-per-chapter    │
 └───────────────────────────┘  └──────────────────────────────────────┘
                                ┌─ Right: detail card ─────────────────┐
                                │  Chapter 7 — build                   │
@@ -64,6 +94,7 @@ Read-only visualisation of the v2 sidecar. Loads from
                                │  BPM       128                        │
                                │  Modes     steady 60% · edging 30%   │
                                │            · tease 10%                │
+                               │  ▁▂▅▇▅▂▁▂▅▇  beat-strength sparkline │
                                │  ─────────                            │
                                │  [Open in FunscriptForge]             │
                                └──────────────────────────────────────┘
@@ -76,11 +107,12 @@ Read-only visualisation of the v2 sidecar. Loads from
 | 1 | **Chapter ribbon** | `chapters[].at_ms`/`end_ms`/`content_type` | Coloured horizontal blocks; width ∝ duration; colour by content_type. |
 | 2 | **Phrase ribbon** | `phrases[].mode` keyed by `chapter_idx` | Sub-strip under chapter ribbon; coloured by mode (`tease`/`steady`/`edging`/…). |
 | 3 | **Waveform** | source media (rendered via librosa or cached PNG) | Thin overview at the top; chapter boundaries vertically projected. |
-| 4 | **Energy envelope** | `energy.beat_map.strengths` over `times_ms` | Sparse curve; per-chapter overlays optional. |
-| 5 | **BPM-per-chapter bars** | `energy.per_chapter[i].bpm` | One bar per chapter; reveals tempo variation. |
-| 6 | **Detail card** | active chapter's record + per-chapter energy block | BPM, content_type, confidence, mode breakdown pie. |
-| 7 | **Confidence shading** | `chapters[].confidence` | Dim chapters below a confidence threshold; hover reveals the value. |
-| 8 | **Provenance footer** | `provenance[]` last entry | "Last analyzed by videoflow.structural 0.0.5 · 18:42:11 UTC." |
+| 4 | **Energy envelope** | `energy.beat_map.strengths` over `times_ms` | Sparse curve; per-chapter overlays optional. Answers *amplitude*. |
+| 5 | **Beat-density heatmap** | bin `energy.beat_map.times_ms` into ~5s buckets | Thin horizontal heatmap strip beneath the energy envelope; shade by beats-per-bucket. Answers *density* — complementary to the envelope's amplitude signal, and the visual that scales gracefully from 30s to 8h files. |
+| 6 | **BPM-per-chapter bars** | `energy.per_chapter[i].bpm` | One bar per chapter; reveals tempo variation. |
+| 7 | **Detail card** | active chapter's record + per-chapter energy block | BPM, content_type, confidence, mode breakdown pie, **per-chapter beat-strength sparkline** (`energy.beat_map.strengths` sliced to chapter range — surfaces where the *hard* beats land within the selected section). |
+| 8 | **Confidence shading** | `chapters[].confidence` | Dim chapters below a confidence threshold; hover reveals the value. |
+| 9 | **Provenance footer** | `provenance[]` last entry | "Last analyzed by videoflow.structural 0.0.5 · 18:42:11 UTC." |
 
 ### What Analyze does NOT do
 
@@ -209,9 +241,10 @@ visualisations top-to-bottom; right pane is the export action panel.
 |---|---|---|---|
 | 1 | **Generated funscript curve** | actions from `generate_from_beats` | Top-level full-timeline curve over the waveform. The headline visual. |
 | 2 | **Action density curve** | bin actions per second | Confirms density tracks the music's energy and the chapter style picks. |
-| 3 | **Heatmap strip** | reuse `forgegen_core.heatmap` | Familiar from the v0.0.4 UI; surfaces stroke amplitude over time. |
-| 4 | **Per-chapter mini-curves** (left nav, on hover/click) | slice the generated curve by chapter | Quick check per chapter — does this section feel right? |
-| 5 | **Stats card** (right) | counts from the generated funscript | Total actions, duration, mean density, top mode. |
+| 3 | **Beat-density heatmap** | bin `energy.beat_map.times_ms` | Same strip from the Analyze tab, rendered alongside the action density curve so the "did the script follow the music?" check is one glance. |
+| 4 | **Heatmap strip** | reuse `forgegen_core.heatmap` | Familiar from the v0.0.4 UI; surfaces stroke amplitude over time. |
+| 5 | **Per-chapter mini-curves** (left nav, on hover/click) | slice the generated curve by chapter | Quick check per chapter — does this section feel right? |
+| 6 | **Stats card** (right) | counts from the generated funscript | Total actions, duration, mean density, top mode. |
 
 ### Export actions
 
