@@ -21,13 +21,16 @@ is **selection over that database** — per chapter, the user picks how
 the funscript should be generated. The user never edits the analysis;
 they steer the generation that runs against it.
 
-This cleaves cleanly into three tabs (show → choose → preview → done):
+This cleaves cleanly into four tabs — left-to-right linear workflow, slow reveal, focus-per-step:
 
 | Tab | Read or write? | Purpose |
 |---|---|---|
-| **Analyze** | Read-only viewer of the sidecar | Build user confidence that the analysis is sensible. |
-| **Generate** | Authors per-chapter generation choices | Pick style / stroke density / shape per chapter, then run generation. |
-| **Export** | Read-only preview of generated output + export actions | The "full reveal" — see what was generated, pick what to export and where. |
+| **Project** (default on launch) | Authoring (file load) | Drop the source media (audio, video, prior sidecar). Lists files in the project, source metadata, sidecar status. The entry point. |
+| **Analyze** | Read-only viewer of the sidecar | Build user confidence that the analysis is sensible. The chapter map is the page; cards reveal *why*; the chapter strip lets the user explore one at a time. |
+| **Generate** | Authors per-chapter *structural intent* | Style / Density / Shape per chapter — **device-agnostic**. The user authors once; targets are picked at Export. |
+| **Export** | Picks devices and writes files | The full reveal + the device pick. Multi-target rendering happens here, not earlier. Save funscript, sidecar snapshot, future targets. |
+
+This page applies **[Pathway UI](https://github.com/liquid-releasing/forge-reusable-ui/blob/main/pathway_ui.md)** — the lqr design language. The five pillars (shell consistency · the path · suggested authoring · graduated complexity · devices last) all show up here: the shell wrapping the page, the tab bar revealing the next step, analysis pre-filling per-chapter suggestions in the chapter strip, the action panel opening only on override, and the device pick deferred to Export.
 
 forgegen never grows phrase-boundary editors, mode overrides, or
 chapter-boundary drag handles. If the analysis is wrong, the recourse
@@ -500,17 +503,23 @@ or do anything else forgegen deliberately doesn't expose.
 
 ## Multi-output future (v0.6+)
 
-The three tabs are designed **multi-target-ready** so the eventual fan-out into shaker / bHaptics / e-stim / OWO doesn't reshape the UI.
+The four tabs are designed **multi-target-ready** so the eventual fan-out into shaker / bHaptics / e-stim / OWO doesn't reshape the UI.
 
-The per-chapter triplet — **Style / Density / Shape** — is *device-agnostic structural intent*. It says "this chapter should feel rhythmic, dense, rising." Every renderer reads that intent and translates it into its own output language: a funscript curve, a bHaptics motor pattern, an e-stim envelope.
+The per-chapter triplet — **Style / Density / Shape** — is *device-agnostic structural intent*, per the [Devices Come Last pillar](https://github.com/liquid-releasing/forge-reusable-ui/blob/main/pathway_ui.md) of Pathway UI. It says "this chapter should feel rhythmic, dense, rising." Every renderer reads that intent and translates it into its own output language: a funscript curve, a bHaptics motor pattern, an e-stim envelope.
 
-Forgegen's role: **drive every renderer from one set of per-chapter choices**. Add a target multi-select above the per-chapter form once we have more than one renderer:
+**Generate authors structural intent. Export picks devices.** No target multi-select on Generate; the picker lives on Export, where the user decides at save-time which renderers to run over the authored sidecar:
 
 ```
-Targets: [✓] Funscript  [ ] bHaptics  [ ] E-stim  [ ] Shaker
+Save as:  [✓] Funscript    [ ] bHaptics    [ ] E-stim    [ ] Shaker
+          (Export tab — appears as additional renderers ship)
 ```
 
-Generate runs each selected renderer over the same authoring. Export tab grows one row per target — funscript count, bHaptics event count, e-stim channel duration — each with its own save button and format options.
+Splitting authoring from device selection unlocks two things:
+
+- **Re-target without re-authoring.** A user who has authored a great per-chapter triplet for funscript can switch to bHaptics output at Export without reopening Generate.
+- **Multi-target export from one authoring pass.** Saving funscript *and* bHaptics is one Export decision, not two trips through Generate.
+
+Export tab grows one row per selected target — funscript count, bHaptics event count, e-stim channel duration — each with its own save button and format options.
 
 **Each forgegen-produced artifact is a single file.** One funscript per file, one bHaptics file per file, one multi-channel WAV per file. Refinement and depth-editing are explicitly **not forgegen's job** — they live in companion editors:
 

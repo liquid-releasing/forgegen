@@ -172,30 +172,50 @@ not a refactor. Per the locked principle: "extensible by accretion."
 
 ---
 
-## Forgegen's role
+## Forgegen's role — author once, target many
 
-Forgegen drives **all** renderers from one set of per-chapter choices.
-The user picks Style / Density / Shape per chapter once; every
-selected target reads those same choices and produces its own output.
+Forgegen splits authoring from device selection per the **Devices
+Come Last** pillar of [Pathway UI](https://github.com/liquid-releasing/forge-reusable-ui/blob/main/pathway_ui.md).
+The user picks Style / Density / Shape per chapter once; the *device*
+is picked at Export, where the same authored sidecar fans out to any
+selected renderer.
 
-**Generate tab UI (multi-target form):**
+**Generate tab — device-agnostic structural intent only:**
 
 ```
-Targets: [✓] Funscript  [ ] bHaptics  [ ] E-stim  [ ] Shaker
-
 Chapter 3 — sustain    music · 128 BPM
   Style:    rhythmic
   Density:  canonical
   Shape:    rise
 
-[Generate selected ▶]
+[Apply authoring ▶]
 ```
 
-The triplet is **device-agnostic structural intent**. Renderers
-translate. No per-target style sliders, no per-target density picks —
-that's exactly the complexity that breaks the easy button.
+The triplet is *device-agnostic structural intent*. Renderers
+translate. No per-target style sliders, no per-target density picks
+on the Generate tab — that's exactly the coupling that breaks the
+easy button and forces re-authoring on retarget.
 
-**Export tab:** one row per generated target with stats + save button.
+**Export tab — pick the device(s):**
+
+```
+Save as:  [✓] Funscript    [ ] bHaptics    [ ] E-stim    [ ] Shaker
+          (additional targets appear as renderers ship)
+
+Funscript  4 217 actions · 1h 48m · density 0.6
+[ Save funscript ]
+
+bHaptics   ( unchecked — will not render )
+```
+
+Each selected target gets its row with stats + save button. v0 with
+one target shows the single funscript row; the multi-select only
+appears when there are renderers to pick between.
+
+The win: **author once, retarget at any time.** A user who has
+authored a great per-chapter triplet for funscript can flip on
+bHaptics output at Export without reopening Generate. Multi-target
+saving is one Export decision, not two passes through Generate.
 
 ---
 
@@ -232,7 +252,7 @@ Ordered by complexity and reuse, lowest-risk first:
 | 1.0+ | OWO / Woojer / additional axes / video-motion-driven shaping | Each lands as a self-contained renderer plus optional sidecar additives. |
 
 Each version adds one renderer. Forgegen's UI ratchets one column at
-a time on the target multi-select. No big-bang rebuild.
+a time on the Export-tab target multi-select. No big-bang rebuild.
 
 ---
 
