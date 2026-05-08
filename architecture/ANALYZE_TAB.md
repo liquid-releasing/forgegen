@@ -71,48 +71,149 @@ The framing on the tab title bar is one line of plain language:
 > structure — so a 90-minute scene that opens ambient and ends
 > music-driven feels like both, not like the average of them."*
 
-### Layout
+### Layout — category cards over one canvas
+
+Five category cards across the top of the page, each a distinct signal
+the analysis surfaced. Pattern borrowed from FunscriptForge's Tone tab
+— same six-card-row shape, but each card here is a *category of
+analysis* the user explores rather than a mood they pick. Click a
+card to focus that category in the canvas below.
+
+The card row keeps depth visible (the user sees all five categories
+at once — visual proof of what we extracted) without overwhelming
+(only one full chart at a time). Each card carries its own headline,
+plain-language description, primary visual, and a couple of secondary
+stats — like the FunscriptForge tone card's headline + sliders +
+before/after structure, but for analysis signals.
 
 ```
-┌─ TopBar (always visible) ───────────────────────────────────────────┐
-│  ⌘  set.mp3                                                          │
-│  3h 12m · 38 chapters · BPM 95–142 · last analyzed 2026-05-07 18:42  │
-│  [Chapter ▼ chapter 7 — build]    [Open in FunscriptForge]           │
+┌─ TopBar ─────────────────────────────────────────────────────────────┐
+│  ⌘  set.mp3 · 3h 12m · 38 chapters · BPM 95–142                       │
+│  [Chapter ▼ chapter 7 — build]    [Open in FunscriptForge]            │
 └──────────────────────────────────────────────────────────────────────┘
-┌─ Left nav: chapter list ──┐  ┌─ Center: stacked ribbons ───────────┐
-│  ▢ 1  intro       6:42    │  │  ── waveform ─────────────────       │
-│  ▢ 2  build       4:51    │  │  ▌▌▌▌▌▌▌▌▌▌▌▌ chapter ribbon ▌▌▌▌    │
-│  ▣ 3  sustain     7:15 ←  │  │  ▎▎▎▎ ▎▎▎▎▎ phrase ribbon ▎▎▎▎▎     │
-│  ▢ 4  edge        5:22    │  │  /\__/\___/\___/\__ energy curve     │
-│  …                        │  │  ▓▓▒░░▒▓▓▒░▓▓ beat-density heatmap   │
-│  ▢ 38 outro       3:30    │  │  ▆ ▅ ▇ ▄ ▆ ▅ ▇ ▆ BPM-per-chapter    │
-└───────────────────────────┘  └──────────────────────────────────────┘
-                               ┌─ Right: detail card ─────────────────┐
-                               │  Chapter 7 — build                   │
-                               │  Duration  6:42                      │
-                               │  Type      music    conf 0.94         │
-                               │  BPM       128                        │
-                               │  Modes     steady 60% · edging 30%   │
-                               │            · tease 10%                │
-                               │  ▁▂▅▇▅▂▁▂▅▇  beat-strength sparkline │
-                               │  ─────────                            │
-                               │  [Open in FunscriptForge]             │
-                               └──────────────────────────────────────┘
+
+ANALYSIS · STRUCTURE
+┌────────────┬────────────┬────────────┬────────────┬────────────┐
+│ ▣ Structure│   Phrases  │   Energy   │    Beats   │ Confidence │
+│  38 ch     │   412 ph   │  envelope  │ 95–142 BPM │  avg 0.87  │
+└────────────┴────────────┴────────────┴────────────┴────────────┘
+┌─ Left nav ────────────┐  ┌─ Active category canvas ──────────────┐
+│  ▢ 1  intro    6:42   │  │  Structure — how the file is divided   │
+│  ▢ 2  build    4:51   │  │  ──────                                 │
+│  ▣ 3  sustain  7:15 ← │  │  Long-form material has natural breaks │
+│  ▢ 4  edge     5:22   │  │  — silence, scene shifts, mood         │
+│  …                    │  │  changes. We found 38 chapters with    │
+│  ▢ 38 outro    3:30   │  │  boundaries snapped to natural pauses. │
+│                       │  │                                         │
+│                       │  │  ── waveform ─────────────────          │
+│                       │  │  ▌▌▌▌▌▌▌▌▌▌▌▌ chapter ribbon ▌▌▌▌        │
+│                       │  │                                         │
+│                       │  │  Music 62% · Ambient 28% · Mixed 10%   │
+└───────────────────────┘  └────────────────────────────────────────┘
+                           ┌─ Detail card (selected chapter) ───────┐
+                           │  Chapter 3 — sustain   music · 128 BPM │
+                           │  Modes  steady 60% · edging 30% · …    │
+                           │  ▁▂▅▇▅▂▁▂▅▇  beat-strength sparkline   │
+                           │  [Open in FunscriptForge]               │
+                           └────────────────────────────────────────┘
 ```
 
-### Visuals (in priority order)
+The right-pane **detail card** is independent of the category
+selection — it always shows the selected chapter's drilldown (BPM,
+content_type, dominant mode, beat-strength sparkline, FunscriptForge
+handoff). The category card row drives the *primary canvas*; the
+detail card drives the *selected chapter*. Two orthogonal axes.
 
-| # | Visual | Source field | Renders |
-|---|---|---|---|
-| 1 | **Chapter ribbon** | `chapters[].at_ms`/`end_ms`/`content_type` | Coloured horizontal blocks; width ∝ duration; colour by content_type. |
-| 2 | **Phrase ribbon** | `phrases[].mode` keyed by `chapter_idx` | Sub-strip under chapter ribbon; coloured by mode (`tease`/`steady`/`edging`/…). |
-| 3 | **Waveform** | source media (rendered via librosa or cached PNG) | Thin overview at the top; chapter boundaries vertically projected. |
-| 4 | **Energy envelope** | `energy.beat_map.strengths` over `times_ms` | Sparse curve; per-chapter overlays optional. Answers *amplitude*. |
-| 5 | **Beat-density heatmap** | bin `energy.beat_map.times_ms` into ~5s buckets | Thin horizontal heatmap strip beneath the energy envelope; shade by beats-per-bucket. Answers *density* — complementary to the envelope's amplitude signal, and the visual that scales gracefully from 30s to 8h files. |
-| 6 | **BPM-per-chapter bars** | `energy.per_chapter[i].bpm` | One bar per chapter; reveals tempo variation. |
-| 7 | **Detail card** | active chapter's record + per-chapter energy block | BPM, content_type, confidence, mode breakdown pie, **per-chapter beat-strength sparkline** (`energy.beat_map.strengths` sliced to chapter range — surfaces where the *hard* beats land within the selected section). |
-| 8 | **Confidence shading** | `chapters[].confidence` | Dim chapters below a confidence threshold; hover reveals the value. |
-| 9 | **Provenance footer** | `provenance[]` last entry | "Last analyzed by videoflow.structural 0.0.5 · 18:42:11 UTC." |
+### The five categories
+
+Each card is structured the same: **title** in the card · **count or
+range** as a one-line stat · click to expand the canvas below. The
+canvas always carries headline + description + primary visual +
+secondary stats.
+
+#### 1 · Structure — how the file is divided
+
+- **Headline:** "How is the file divided?"
+- **Description (canvas):** Long-form material has natural breaks —
+  silence, scene shifts, mood changes. videoflow detects these and
+  snaps each chapter boundary to the nearest pause.
+- **Primary visual:** Chapter ribbon over the waveform; blocks
+  coloured by `content_type`.
+- **Secondary stats:** chapter count, average duration, content_type
+  distribution (music % · ambient % · mixed %).
+- **Source fields:** `chapters[]`
+
+#### 2 · Phrases — what happens within each section
+
+- **Headline:** "What happens within each section?"
+- **Description:** Within each chapter we identify musical phrases
+  (~16-beat units) and label each one with one of six modes —
+  `tease` / `steady` / `edging` / `break` / `fast` / `slow`. Modes
+  are computed *relative to the chapter's own context*, so a quiet
+  phrase in an ambient chapter doesn't get crushed to `break` just
+  because its absolute energy is low.
+- **Primary visual:** Phrase ribbon coloured by mode, aligned under
+  the chapter ribbon.
+- **Secondary stats:** mode distribution (tease 18% · steady 47% · …);
+  total phrase count.
+- **Source fields:** `phrases[]`
+
+#### 3 · Energy — how the audio breathes
+
+- **Headline:** "How does the audio breathe?"
+- **Description:** Per-beat energy curve plus the file-wide and
+  per-chapter percentile distribution. Surfaces *amplitude* dynamics —
+  how loud the loud parts are and how quiet the quiet parts are.
+- **Primary visual:** Energy envelope curve over the waveform.
+- **Secondary stats:** p5 / p25 / p50 / p75 / p95 file-wide and for
+  the selected chapter.
+- **Source fields:** `energy.beat_map.strengths`, `energy.percentiles`
+
+#### 4 · Beats — the rhythmic foundation
+
+- **Headline:** "What is the rhythmic foundation?"
+- **Description:** Beat positions binned into ~5s buckets give a
+  density signal complementary to energy. BPM is computed *per
+  chapter*, not as one global average — so a 60 BPM ambient intro
+  plus a 140 BPM climax aren't crushed into a meaningless 100 BPM
+  number.
+- **Primary visual:** Beat-density heatmap strip + BPM-per-chapter
+  bars stacked beneath.
+- **Secondary stats:** total beats, BPM range, downbeat count.
+- **Source fields:** `energy.beat_map.times_ms`, `energy.per_chapter[i].bpm`
+
+#### 5 · Confidence — how certain are we
+
+- **Headline:** "How certain are we?"
+- **Description:** Each chapter carries a detection-confidence score.
+  Low-confidence chapters dim in the ribbon — that's where the user
+  should look first if the analysis feels off, and where to drop into
+  FunscriptForge to refine boundaries.
+- **Primary visual:** Chapter ribbon with low-confidence chapters
+  shaded; hover reveals the value.
+- **Secondary stats:** average confidence, list of chapters below a
+  threshold, provenance footer ("Last analyzed by videoflow.structural
+  0.0.5 · 18:42:11 UTC").
+- **Source fields:** `chapters[].confidence`, `provenance[]`
+
+### What the canvas looks like across cards
+
+Same skeleton every time — only the content changes. This is the
+point: every category gets first-class treatment without competing
+with the others on the same screen.
+
+```
+[ Active card canvas ]
+┌────────────────────────────────────────────────────────┐
+│  <Headline>                                             │
+│  ─────                                                  │
+│  <Plain-language description>                           │
+│                                                         │
+│  <Primary visual — full width>                          │
+│                                                         │
+│  <Secondary stats line(s)>                              │
+└────────────────────────────────────────────────────────┘
+```
 
 ### What Analyze does NOT do
 
@@ -347,6 +448,35 @@ FunscriptForge picks up exactly where forgegen left off — same chapter
 list, same phrases, same energy data. The user can then refine
 chapter boundaries, override phrase modes, choose per-tone parameters,
 or do anything else forgegen deliberately doesn't expose.
+
+---
+
+## Multi-output future (v0.6+)
+
+The three tabs are designed **multi-target-ready** so the eventual fan-out into shaker / bHaptics / e-stim / OWO doesn't reshape the UI.
+
+The per-chapter triplet — **Style / Density / Shape** — is *device-agnostic structural intent*. It says "this chapter should feel rhythmic, dense, rising." Every renderer reads that intent and translates it into its own output language: a funscript curve, a bHaptics motor pattern, an e-stim envelope.
+
+Forgegen's role: **drive every renderer from one set of per-chapter choices**. Add a target multi-select above the per-chapter form once we have more than one renderer:
+
+```
+Targets: [✓] Funscript  [ ] bHaptics  [ ] E-stim  [ ] Shaker
+```
+
+Generate runs each selected renderer over the same authoring. Export tab grows one row per target — funscript count, bHaptics event count, e-stim channel duration — each with its own save button and format options.
+
+**Each forgegen-produced artifact is a single file.** One funscript per file, one bHaptics file per file, one multi-channel WAV per file. Refinement and depth-editing are explicitly **not forgegen's job** — they live in companion editors:
+
+| Target | Forgegen produces | Refiner |
+|---|---|---|
+| Funscript | `<stem>.funscript` | **FunscriptForge** — chapter / phrase / pattern / action depth |
+| bHaptics | `<stem>.bhap` | (future) — region/motor editor |
+| E-stim | `<stem>.estim.wav` | (future) — channel envelopes + safety |
+| Shaker | `<stem>.shaker.funscript` | FunscriptForge (single-channel funscript) |
+
+The "Open in FunscriptForge" button on each chapter card is the funscript-target escape hatch. As other targets ship, additional escape hatches surface — but each one specific to its target. Forgegen never grows the editing surface itself.
+
+See [HAPTICS_GENERATOR_FAMILY.md](HAPTICS_GENERATOR_FAMILY.md) for the renderer architecture and the per-target rollout order.
 
 ---
 
