@@ -38,8 +38,46 @@ card). The "easy button" promise stays intact.
 
 ## Tab 1 — Analyze
 
-Read-only visualisation of the v2 sidecar. Loads from
-`videoflow.sidecar.read_sidecar(media_path)`; never writes.
+**The chapter map is the page.** Cards across the middle reveal *why*
+each chapter looks the way it does (what dimension of analysis the
+user is viewing); the chapter strip lets the user explore one chapter
+at a time. Read-only — loads from
+`videoflow.sidecar.read_sidecar(media_path)`, never writes.
+
+### Reuses the lqr UI shell
+
+This page is composed from the shared shell defined in
+[`forge-reusable-ui`](https://github.com/liquid-releasing/forge-reusable-ui)
+and the widget library in
+[`forge-timeline`](https://github.com/liquid-releasing/forge-timeline).
+The shell is what makes the lqr toolchain feel like one app: anyone
+who has used FunscriptForge / forgeplayer / forgedemo recognises the
+bones the moment forgegen opens. Each app subtracts the affordances
+it doesn't need; the shell stays.
+
+| Shell element | Source | What forgegen does with it |
+|---|---|---|
+| **Banner** (top) | `forge-reusable-ui/banner.md` | Project name + duration + chapter count + version + Scope dropdown + Undo/Redo + Project + Export. Same as every lqr app. |
+| **Tab bar** | `forge-reusable-ui/tab_bar.md` | `Analyze · Generate · Export · Help · About`. |
+| **Chapter selector strip** | `forge-reusable-ui` script-overview pattern | Coloured chapter cards across the top: each card shows chapter name + the user's chosen Style label (e.g. "Rhythmic") + the chosen Tone shape. Click a card to focus. **Forgegen strips the `Insert chapter` / `Join chapter` buttons** — boundaries are not editable here; that's FunscriptForge / forgeassembler territory. |
+| **Active canvas** | shell pattern; content forgegen-specific | Where the chapter strip "Click a chapter to focus" leads. Holds the active category card's visual. |
+| **Video panel** (right) | `forge-timeline.VideoPanel` + `BatonSync` | Video preview, transport (play / pause / step / seek), current-chapter label, time stamp. Clicking on the chapter strip or any visual seeks the player; playing the video advances the baton across every visual. |
+| **Phrase selector** (when zoomed into one chapter) | `forge-reusable-ui/funscript_selectors/phrase_selector.png` | Below the canvas when a chapter is focused — phrase boxes overlaid on the in-chapter waveform, plus a phrase colour stripe. Forgegen shows it read-only; FunscriptForge adds editing. |
+
+What's strategically valuable about this isn't the implementation
+saving — it's that **using the same shell gets the user into our UI**.
+A creator who has used FunscriptForge to refine a script knows where
+to click in forgegen the moment it opens. Forgegen's job is to feel
+like the front door of the same building, not a separate app.
+
+### What forgegen substitutes for the funscript curve
+
+In FunscriptForge, the canvas's headline visual is the funscript curve
+(coloured by mode, with phrases overlaid). In forgegen Analyze, **the
+same canvas slot holds an Audacity-style waveform** — the audio is the
+artifact under analysis, not a generated funscript. Everything else
+about the canvas (chapter ribbon overlay, phrase ribbon, baton sync)
+stays identical to the FF pattern.
 
 ### Depth — what this surfaces vs PythonDancer
 
@@ -87,36 +125,45 @@ stats — like the FunscriptForge tone card's headline + sliders +
 before/after structure, but for analysis signals.
 
 ```
-┌─ TopBar ─────────────────────────────────────────────────────────────┐
-│  ⌘  set.mp3 · 3h 12m · 38 chapters · BPM 95–142                       │
-│  [Chapter ▼ chapter 7 — build]    [Open in FunscriptForge]            │
-└──────────────────────────────────────────────────────────────────────┘
+┌─ Banner (forge-reusable-ui) ────────────────────────────────────────────┐
+│  F  set.mp3 · 3h 12m · 38 chapters · BPM 95–142     SCOPE All chapters ▾  │
+│  Aftermath — Director's Cut · imported today, 14:22       Project · Export│
+└─────────────────────────────────────────────────────────────────────────┘
+┌─ Tab bar ───────────────────────────────────────────────────────────────┐
+│  [▣ Analyze]  [Generate]  [Export]                Help · About            │
+└─────────────────────────────────────────────────────────────────────────┘
 
-ANALYSIS · STRUCTURE
-┌────────────┬────────────┬────────────┬────────────┬────────────┐
-│ ▣ Structure│   Phrases  │   Energy   │    Beats   │ Confidence │
-│  38 ch     │   412 ph   │  envelope  │ 95–142 BPM │  avg 0.87  │
-└────────────┴────────────┴────────────┴────────────┴────────────┘
-┌─ Left nav ────────────┐  ┌─ Active category canvas ──────────────┐
-│  ▢ 1  intro    6:42   │  │  Structure — how the file is divided   │
-│  ▢ 2  build    4:51   │  │  ──────                                 │
-│  ▣ 3  sustain  7:15 ← │  │  Long-form material has natural breaks │
-│  ▢ 4  edge     5:22   │  │  — silence, scene shifts, mood         │
-│  …                    │  │  changes. We found 38 chapters with    │
-│  ▢ 38 outro    3:30   │  │  boundaries snapped to natural pauses. │
-│                       │  │                                         │
-│                       │  │  ── waveform ─────────────────          │
-│                       │  │  ▌▌▌▌▌▌▌▌▌▌▌▌ chapter ribbon ▌▌▌▌        │
-│                       │  │                                         │
-│                       │  │  Music 62% · Ambient 28% · Mixed 10%   │
-└───────────────────────┘  └────────────────────────────────────────┘
-                           ┌─ Detail card (selected chapter) ───────┐
-                           │  Chapter 3 — sustain   music · 128 BPM │
-                           │  Modes  steady 60% · edging 30% · …    │
-                           │  ▁▂▅▇▅▂▁▂▅▇  beat-strength sparkline   │
-                           │  [Open in FunscriptForge]               │
-                           └────────────────────────────────────────┘
+SCRIPT OVERVIEW · CLICK A CHAPTER TO FOCUS                                  ┌── Video ──┐
+┌───────────────┬───────────────┬───────────────┬───────────────┐          │           │
+│ ▣ Act 1 Open  │  Act 2 Rise   │  Act 3 Heat   │  Act 4 Aftercr│          │  ◯        │
+│   Rhythmic    │   Rhythmic    │   Intense     │    Sensual    │          │           │
+└───────────────┴───────────────┴───────────────┴───────────────┘          │           │
+                       ( no Insert / Join chapter )                          │           │
+ANALYSIS · STRUCTURE                                                         │ Act 1 Open│
+┌──────────┬──────────┬──────────┬──────────┬──────────┐                   │ 00:02 02:18│
+│▣Structure│ Phrases  │  Energy  │  Beats   │Confidence│                   │ ◀◀ ◀ ▶ ▶▶ │
+│  38 ch   │  412 ph  │ envelope │95–142 BPM│ avg 0.87 │                   └────────────┘
+└──────────┴──────────┴──────────┴──────────┴──────────┘
+┌─ Active category canvas ───────────────────────────────────────────────┐
+│  Structure — how the file is divided                                    │
+│  ─────                                                                  │
+│  Long-form material has natural breaks. We found 38 chapters with       │
+│  boundaries snapped to natural pauses.                                  │
+│                                                                         │
+│  ▁▃▆█▇▅▃▁▂▅▇█▇▆▄▂▁ Audacity waveform (forge-timeline) ▆▇▆▅▃▁           │
+│                    │ baton (synced to video player)                     │
+│  ▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌ chapter ribbon ▌▌▌▌▌▌▌▌▌▌▌▌                    │
+│                                                                         │
+│  Music 62% · Ambient 28% · Mixed 10%                                    │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
+
+When a chapter is focused (clicked in the strip), the canvas zooms to
+that chapter's range and the **phrase selector** (from
+`forge-reusable-ui/funscript_selectors/phrase_selector.png`) appears
+below — phrase boxes overlaid on the waveform plus a phrase colour
+strip. Same widget the FunscriptForge phrase tab uses; here it's
+read-only.
 
 The right-pane **detail card** is independent of the category
 selection — it always shows the selected chapter's drilldown (BPM,
