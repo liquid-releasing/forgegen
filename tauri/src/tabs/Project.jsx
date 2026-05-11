@@ -211,7 +211,7 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
           </div>
         )}
 
-        {sidecar && (
+        {sidecar && !busy && (
           <div
             style={{
               marginTop: 8,

@@ -195,21 +195,20 @@ export default function Analysis({ sidecar, onContinue }) {
           </span>
           <button
             onClick={onContinue}
-            disabled
-            title="Generate tab not yet implemented"
+            title="Open Generate tab to author per-chapter recipes"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 10,
               padding: '12px 22px',
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
+              background: 'var(--accent)',
+              border: '1px solid var(--accent)',
               borderRadius: 8,
-              color: 'var(--muted)',
+              color: '#0c0d10',
               fontFamily: 'inherit',
               fontSize: 14,
               fontWeight: 700,
-              cursor: 'not-allowed',
+              cursor: 'pointer',
             }}
           >
             Generate funscript →
