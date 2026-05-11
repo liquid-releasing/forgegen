@@ -51,35 +51,48 @@ const CATEGORIES = [
 export { CATEGORIES };
 
 export default function CategoryCards({ sidecar, active, onChange }) {
+  const last = CATEGORIES.length - 1;
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 10,
-      }}
-    >
-      {CATEGORIES.map((c) => {
+    <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+      {CATEGORIES.map((c, idx) => {
         const isActive = c.id === active;
+        const isFirst = idx === 0;
+        const isLast = idx === last;
         return (
           <button
             key={c.id}
             onClick={() => onChange(c.id)}
             style={{
+              flex: 1,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-start',
               gap: 6,
               padding: '12px 14px',
-              background: isActive ? 'var(--bg)' : 'var(--bg-elevated)',
-              border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
+              // bg matches canvas on active so the tab "merges" into the panel below
+              background: isActive ? 'var(--bg-elevated)' : 'var(--bg)',
+              // top accent on active; matched-height transparent border keeps inactive
+              // tabs at the same vertical position
               borderTop: `2.5px solid ${isActive ? 'var(--accent)' : 'transparent'}`,
-              borderRadius: 8,
+              // sides — only first tab has a left border; right border on every tab
+              // produces single-line dividers between tabs
+              borderLeft: isFirst ? '1px solid var(--border)' : 'none',
+              borderRight: '1px solid var(--border)',
+              // inactive tabs share the canvas top-border line; active has no bottom
+              // border AND extends down 1px (marginBottom) to break that line
+              borderBottom: isActive ? 'none' : '1px solid var(--border)',
+              borderTopLeftRadius: isFirst ? 8 : 0,
+              borderTopRightRadius: isLast ? 8 : 0,
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0,
+              marginBottom: isActive ? -1 : 0,
+              position: 'relative',
+              zIndex: isActive ? 2 : 1,
               cursor: 'pointer',
               textAlign: 'left',
               color: 'var(--fg)',
               fontFamily: 'inherit',
-              transition: 'all 120ms',
+              transition: 'background 120ms, border-color 120ms',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

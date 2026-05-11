@@ -161,17 +161,18 @@ export default function Analysis({ sidecar, onContinue }) {
         {/* 4. KPI strip — pre-generation stats only */}
         <KpiStrip sidecar={sidecar} />
 
-        {/* 5. Category cards (4) */}
-        <CategoryCards sidecar={sidecar} active={category} onChange={setCategory} />
-
-        {/* 6. Active card canvas */}
-        <ActiveCardCanvas
-          sidecar={sidecar}
-          categoryId={category}
-          headline={cat.headline}
-          desc={cat.desc}
-          label={cat.label}
-        />
+        {/* 5 + 6. Tabbed analysis panel — CategoryCards = tabs, ActiveCardCanvas = body.
+            Wrapped with gap:0 so they visually merge into one panel rather than two. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <CategoryCards sidecar={sidecar} active={category} onChange={setCategory} />
+          <ActiveCardCanvas
+            sidecar={sidecar}
+            categoryId={category}
+            headline={cat.headline}
+            desc={cat.desc}
+            label={cat.label}
+          />
+        </div>
 
         {/* 7. Per-chapter focus row */}
         <ChapterFocusRow sidecar={sidecar} focusedIdx={focusedIdx} onFocus={setFocusedIdx} />

@@ -33,6 +33,40 @@ export async function autoChapter(path) {
   return invokeOrMock('auto_chapter', { path }, () => mockAutoChapter(path));
 }
 
+/** Read existing <stem>.chapters.json next to media path. Returns null if missing. */
+export async function readSidecar(path) {
+  return invokeOrMock('read_sidecar', { path }, () => mockReadSidecar(path));
+}
+
+// ---------------------------------------------------------------------------
+// File picker — Tauri dialog plugin (native) or HTML <input> stub (browser)
+// ---------------------------------------------------------------------------
+
+/** Open a native file picker for audio/video. Returns the selected absolute
+ * path, or null if the user cancelled. In browser-only mode, returns a
+ * stable mock path so the rest of the flow can be exercised. */
+export async function pickAudioFile() {
+  if (!isTauri()) {
+    return mockPickAudioFile();
+  }
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const selected = await open({
+    multiple: false,
+    directory: false,
+    filters: [
+      {
+        name: 'Audio / Video',
+        extensions: [
+          'mp3', 'wav', 'flac', 'ogg', 'm4a', 'aac',
+          'mp4', 'mkv', 'mov', 'avi', 'webm', 'm4v',
+        ],
+      },
+      { name: 'All files', extensions: ['*'] },
+    ],
+  });
+  return selected ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // Mocks (browser-only mode)
 // ---------------------------------------------------------------------------
@@ -87,6 +121,17 @@ function mockAutoChapter(_path) {
   // videoflow.structural.auto_chapter() would write to <stem>.chapters.json
   // for a ~9.5 minute music track with intro/build/climax/recover structure.
   return Promise.resolve(buildMockSidecar());
+}
+
+function mockReadSidecar(_path) {
+  // Browser-only mode never has a real sidecar on disk — pretend
+  // there isn't one so the caller falls through to autoChapter.
+  return Promise.resolve(null);
+}
+
+function mockPickAudioFile() {
+  // Stable fake path so the rest of the flow can be exercised in browser.
+  return Promise.resolve('browser-mock://demo-track.mp3');
 }
 
 // ---------------------------------------------------------------------------

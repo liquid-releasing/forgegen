@@ -63,7 +63,13 @@ export default function App() {
       </header>
 
       <main>
-        {tab === 'project' && <Project sidecar={sidecar} onSidecarLoaded={setSidecar} />}
+        {tab === 'project' && (
+          <Project
+            sidecar={sidecar}
+            onSidecarLoaded={setSidecar}
+            onSwitchToAnalysis={() => setTab('analysis')}
+          />
+        )}
         {tab === 'analysis' && <Analysis sidecar={sidecar} />}
       </main>
     </div>

@@ -354,7 +354,9 @@ export function ActiveCardCanvas({ sidecar, categoryId, headline, desc, label })
       style={{
         background: 'var(--bg-elevated)',
         border: '1px solid var(--border)',
-        borderRadius: 10,
+        // Top edge defined by the active CategoryCard tab; flatten our top corners
+        // so we read as one tabbed panel together
+        borderRadius: '0 0 10px 10px',
         padding: 22,
         display: 'flex',
         flexDirection: 'column',
