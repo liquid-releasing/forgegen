@@ -59,7 +59,11 @@ export async function readSidecar(path) {
   return invokeOrMock('read_sidecar', { path }, () => mockReadSidecar(path));
 }
 
-/** Generate a funscript from `path` using the supplied options.
+/** Generate a funscript from `path` using the supplied options. Optional
+ * `onProgress(stageLabel)` is invoked for each per-stage progress line
+ * streamed from videoflow's stderr (e.g. "Loading audio (librosa)…",
+ * "Generating motion curve…"). Subscription is set up before the bridge
+ * call and torn down on resolve or reject.
  *
  * options shape (matches Rust GenerateOptions):
  *   { source: 'full'|'percussive', density: 'half'|'full'|'1'|'2'|'4'|'8',
@@ -67,12 +71,23 @@ export async function readSidecar(path) {
  *
  * Returns { output, bpm, beats, phrases, duration_ms } from videoflow CLI.
  */
-export async function generateFunscript(path, options) {
-  return invokeOrMock(
-    'generate_funscript',
-    { path, options },
-    () => mockGenerateFunscript(path, options)
-  );
+export async function generateFunscript(path, options, onProgress) {
+  if (!isTauri()) {
+    return mockGenerateFunscript(path, options, onProgress);
+  }
+  let unlisten = null;
+  if (typeof onProgress === 'function') {
+    const { listen } = await import('@tauri-apps/api/event');
+    unlisten = await listen('generate_funscript_progress', (e) => {
+      try { onProgress(String(e.payload)); } catch { /* never break the run */ }
+    });
+  }
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    return await invoke('generate_funscript', { path, options });
+  } finally {
+    if (unlisten) unlisten();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -196,24 +211,44 @@ function mockPickAudioFile() {
   return Promise.resolve('browser-mock://demo-track.mp3');
 }
 
-function mockGenerateFunscript(path, options) {
-  // Simulate a 1.2s synthesis so the spinner UI is exercised.
+function mockGenerateFunscript(path, options, onProgress) {
+  // Simulate a synthesis with stage progress so browser-mode dev exercises
+  // the same UI path as Tauri runtime.
+  const stem = String(path).replace(/\.[^.]+$/, '');
+  const density = options?.density ?? 'half';
+  const factor = { half: 1, full: 2, '1': 1, '2': 2, '4': 4, '8': 8 }[density] ?? 1;
+  const result = {
+    output: `${stem}.funscript`,
+    bpm: 122.0,
+    beats: 1240,
+    phrases: 32,
+    duration_ms: 572000,
+    actions: 1240 * factor,
+    mocked: true,
+  };
+  if (typeof onProgress !== 'function') {
+    return new Promise((resolve) => setTimeout(() => resolve(result), 1200));
+  }
+  const STAGES = [
+    'Loading audio (librosa)…',
+    'Tracking beats…',
+    'Generating motion curve…',
+    'Classifying phrase modes…',
+    'Shaping curve per mode…',
+    'Writing funscript…',
+  ];
   return new Promise((resolve) => {
-    setTimeout(() => {
-      const stem = String(path).replace(/\.[^.]+$/, '');
-      const density = options?.density ?? 'half';
-      // Rough action count for the mock sidecar (~2400 beats × density factor)
-      const factor = { half: 1, full: 2, '1': 1, '2': 2, '4': 4, '8': 8 }[density] ?? 1;
-      resolve({
-        output: `${stem}.funscript`,
-        bpm: 122.0,
-        beats: 1240,
-        phrases: 32,
-        duration_ms: 572000,
-        actions: 1240 * factor,
-        mocked: true,
-      });
-    }, 1200);
+    let i = 0;
+    const tick = () => {
+      if (i < STAGES.length) {
+        try { onProgress(STAGES[i]); } catch { /* swallow */ }
+        i += 1;
+        setTimeout(tick, 350);
+      } else {
+        resolve(result);
+      }
+    };
+    tick();
   });
 }
 

@@ -22,11 +22,33 @@ import PerChapterForm, {
   SHAPE_OPTIONS,
   STYLE_OPTIONS,
 } from '../components/generate/PerChapterForm.jsx';
+import Stepper from '../components/common/Stepper.jsx';
 import { generateFunscript, isTauri } from '../api/videoflow.js';
 import { fmtTime } from '../lib/analysis.js';
 import { TARGETS, getTarget } from '../lib/targets.js';
 
 const DEFAULT_TARGET_ID = 'keon';
+
+// Pipeline stages for videoflow generate-funscript. Maps stderr labels
+// from videoflow.audio.analyze_beats + videoflow.generate.generate_from_beats
+// into a 5-step stepper. The three synthesis steps (curve/classify/shape)
+// fold into one "Synth" step because they're all fast and feel like one
+// unit to the user.
+const GENERATE_STAGES = [
+  { id: 'extract', label: 'Extract', match: /Extracting audio/i },
+  { id: 'load', label: 'Load', match: /Loading audio/i },
+  { id: 'beats', label: 'Beats', match: /Separating percussive|Tracking beats|HPSS/i },
+  { id: 'synth', label: 'Synth', match: /Generating motion curve|Classifying phrase modes|Shaping curve/i },
+  { id: 'write', label: 'Write', match: /Writing funscript/i },
+];
+
+function stageIdForGenerateLabel(label) {
+  if (!label) return null;
+  for (const s of GENERATE_STAGES) {
+    if (s.match.test(label)) return s.id;
+  }
+  return null;
+}
 
 const PHASES = {
   IDLE: 'idle',
@@ -302,6 +324,8 @@ export default function Generate({ sidecar, mediaPath }) {
   const [phase, setPhase] = useState(PHASES.IDLE);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [stage, setStage] = useState(null);
+  const [stageId, setStageId] = useState(null);
 
   const sendOptions = useMemo(() => {
     const r = recipes[0] || DEFAULT_RECIPE;
@@ -338,9 +362,15 @@ export default function Generate({ sidecar, mediaPath }) {
   async function handleGenerate() {
     setError(null);
     setResult(null);
+    setStage(null);
+    setStageId(null);
     setPhase(PHASES.GENERATING);
     try {
-      const out = await generateFunscript(mediaPath, sendOptions);
+      const out = await generateFunscript(mediaPath, sendOptions, (label) => {
+        setStage(label);
+        const next = stageIdForGenerateLabel(label);
+        if (next) setStageId(next);
+      });
       setResult(out);
       setPhase(PHASES.DONE);
     } catch (err) {
@@ -460,28 +490,34 @@ export default function Generate({ sidecar, mediaPath }) {
         {busy && (
           <div
             style={{
-              padding: 12,
+              padding: 14,
               background: 'var(--bg)',
               border: '1px solid var(--border)',
               borderRadius: 6,
               fontSize: 12,
               color: 'var(--muted)',
               display: 'flex',
-              alignItems: 'center',
-              gap: 8,
+              flexDirection: 'column',
+              gap: 12,
             }}
           >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background: 'var(--accent)',
-                animation: 'pulse 1.2s ease-in-out infinite',
-              }}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: 'var(--accent)',
+                  animation: 'pulse 1.2s ease-in-out infinite',
+                }}
+              />
+              Running videoflow generate-funscript…
+            </div>
+            <Stepper
+              stages={GENERATE_STAGES}
+              currentStageId={stageId}
+              detail={stage}
             />
-            Running videoflow generate-funscript… (a few seconds for short
-            tracks, longer for full albums)
           </div>
         )}
 

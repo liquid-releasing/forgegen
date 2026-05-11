@@ -251,9 +251,12 @@ pub struct GenerateOptions {
 
 /// Run `videoflow generate-funscript <input> <output> --source ... --tone ... --stroke-density ...`
 /// and return the parsed JSON result. Output path defaults to `<stem>.funscript`
-/// next to the media file.
+/// next to the media file. Per-stage progress streams via the
+/// `generate_funscript_progress` Tauri event so the React UI can render
+/// the same Stepper used for auto-chapter.
 #[tauri::command]
 pub async fn generate_funscript(
+    app: AppHandle,
     path: String,
     options: GenerateOptions,
 ) -> Result<Value, String> {
@@ -271,16 +274,20 @@ pub async fn generate_funscript(
 
     let _ = options.emphasize_beats; // accepted for forward-compat; CLI flag pending
 
-    spawn_videoflow(&[
-        "generate-funscript",
-        &path,
-        &out_str,
-        "--source",
-        &options.source,
-        "--stroke-density",
-        &options.density,
-        "--tone",
-        &options.tone,
-    ])
+    spawn_videoflow_streaming(
+        &app,
+        "generate_funscript_progress",
+        &[
+            "generate-funscript",
+            &path,
+            &out_str,
+            "--source",
+            &options.source,
+            "--stroke-density",
+            &options.density,
+            "--tone",
+            &options.tone,
+        ],
+    )
     .await
 }
