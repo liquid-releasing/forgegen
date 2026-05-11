@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { autoChapter, isTauri, pickAudioFile, readSidecar } from '../api/videoflow.js';
 import { fmtTime, totalDurationMs } from '../lib/analysis.js';
+import Stepper from '../components/common/Stepper.jsx';
 
 /** Format an elapsed-second count for the busy-state label. */
 function fmtElapsed(s) {
@@ -23,6 +24,29 @@ function fmtElapsed(s) {
   const m = Math.floor(s / 60);
   const r = s % 60;
   return `${m}m ${String(r).padStart(2, '0')}s`;
+}
+
+// Pipeline stages for videoflow auto-chapter, in order. Each carries a
+// `match` regex against the stage label streamed from videoflow stderr.
+// Sub-stage messages (e.g. "Computing silence map…", "Classifying chapter
+// 3/9…") still surface as `detail` text below the stepper.
+const AUTO_CHAPTER_STAGES = [
+  { id: 'extract', label: 'Extract', match: /Extracting audio/i },
+  { id: 'load', label: 'Load', match: /Loading audio/i },
+  { id: 'detect', label: 'Detect', match: /silence|recurrence|Snapping|Classifying chapter\s/i },
+  { id: 'beats', label: 'Beats', match: /Analysing beats/i },
+  { id: 'classify', label: 'Phrases', match: /Classifying phrases/i },
+  { id: 'sidecar', label: 'Sidecar', match: /Writing sidecar/i },
+];
+
+/** Map the latest progress label to a stage id. Returns null if the
+ *  label doesn't match any known stage (caller can keep the previous). */
+function stageIdForLabel(label) {
+  if (!label) return null;
+  for (const s of AUTO_CHAPTER_STAGES) {
+    if (s.match.test(label)) return s.id;
+  }
+  return null;
 }
 
 const PHASES = {
@@ -41,6 +65,7 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
   const [reusedSidecar, setReusedSidecar] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [stage, setStage] = useState(null);
+  const [stageId, setStageId] = useState(null);
   const intervalRef = useRef(null);
 
   // Tick an elapsed-time counter while we're in CHECKING/ANALYZING phases
@@ -66,6 +91,7 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
     setError(null);
     setReusedSidecar(false);
     setStage(null);
+    setStageId(null);
     setPhase(PHASES.PICKING);
     try {
       const picked = await pickAudioFile();
@@ -87,9 +113,13 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
       }
 
       // Step 2: no sidecar yet → run auto-chapter, streaming per-stage
-      // labels from videoflow stderr into the busy panel
+      // labels from videoflow stderr into the stepper + detail line
       setPhase(PHASES.ANALYZING);
-      const fresh = await autoChapter(picked, (label) => setStage(label));
+      const fresh = await autoChapter(picked, (label) => {
+        setStage(label);
+        const next = stageIdForLabel(label);
+        if (next) setStageId(next);
+      });
       onSidecarLoaded(fresh);
       setPhase(PHASES.LOADED);
     } catch (err) {
@@ -169,7 +199,7 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
         {busy && (
           <div
             style={{
-              padding: 12,
+              padding: 14,
               background: 'var(--bg)',
               border: '1px solid var(--border)',
               borderRadius: 6,
@@ -177,7 +207,7 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
               color: 'var(--muted)',
               display: 'flex',
               flexDirection: 'column',
-              gap: 6,
+              gap: 12,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -192,17 +222,12 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
               />
               {busyLabel}
             </div>
-            {stage && phase === PHASES.ANALYZING && (
-              <div
-                style={{
-                  paddingLeft: 16,
-                  fontSize: 11,
-                  color: 'var(--accent)',
-                  fontFamily: 'ui-monospace, "Cascadia Code", Consolas, monospace',
-                }}
-              >
-                ▸ {stage}
-              </div>
+            {phase === PHASES.ANALYZING && (
+              <Stepper
+                stages={AUTO_CHAPTER_STAGES}
+                currentStageId={stageId}
+                detail={stage}
+              />
             )}
           </div>
         )}

@@ -105,8 +105,16 @@ async fn spawn_videoflow(args: &[&str]) -> Result<Value, String> {
 /// Spawn videoflow and stream stderr line-by-line. Lines prefixed with
 /// `progress: ` are emitted as Tauri events on `event_name` so the React
 /// UI can render per-stage status during long runs. Other stderr lines
-/// are accumulated for the error path. After the process exits, stdout
-/// is parsed as JSON the same way `spawn_videoflow` does.
+/// are accumulated for the error path.
+///
+/// stdout is drained in its own task (NOT via wait_with_output) so the
+/// pipe never fills mid-process. Earlier version relied on
+/// wait_with_output after stderr.take(); under that combination videoflow
+/// exited with code 120 even on successful runs — the hand-off between
+/// taken-and-tasked-stderr and wait_with_output's internal stdout reader
+/// produced an EPIPE-equivalent on Windows that Python's atexit handler
+/// surfaced as a non-zero exit. Splitting both pipes into explicit drain
+/// tasks + a plain `child.wait()` makes the lifetimes obvious.
 async fn spawn_videoflow_streaming(
     app: &AppHandle,
     event_name: &str,
@@ -121,7 +129,11 @@ async fn spawn_videoflow_streaming(
         .spawn()
         .map_err(|e| format!("spawn '{}' failed: {}", bin.display(), e))?;
 
-    let stderr = child
+    let stdout_handle = child
+        .stdout
+        .take()
+        .ok_or_else(|| "failed to capture videoflow stdout".to_string())?;
+    let stderr_handle = child
         .stderr
         .take()
         .ok_or_else(|| "failed to capture videoflow stderr".to_string())?;
@@ -129,7 +141,7 @@ async fn spawn_videoflow_streaming(
     let app_for_task = app.clone();
     let event_name_owned = event_name.to_string();
     let stderr_task = tokio::spawn(async move {
-        let mut reader = BufReader::new(stderr).lines();
+        let mut reader = BufReader::new(stderr_handle).lines();
         let mut other = String::new();
         while let Ok(Some(line)) = reader.next_line().await {
             if let Some(msg) = line.strip_prefix("progress: ") {
@@ -142,21 +154,31 @@ async fn spawn_videoflow_streaming(
         other
     });
 
-    let output = child
-        .wait_with_output()
+    let stdout_task = tokio::spawn(async move {
+        use tokio::io::AsyncReadExt;
+        let mut buf = Vec::new();
+        let mut reader = BufReader::new(stdout_handle);
+        reader.read_to_end(&mut buf).await.ok();
+        buf
+    });
+
+    let status = child
+        .wait()
         .await
         .map_err(|e| format!("wait videoflow failed: {}", e))?;
-    let other_stderr = stderr_task.await.unwrap_or_default();
 
-    if !output.status.success() {
+    let stderr_other = stderr_task.await.unwrap_or_default();
+    let stdout_bytes = stdout_task.await.unwrap_or_default();
+
+    if !status.success() {
         return Err(format!(
             "videoflow exit {} — stderr: {}",
-            output.status.code().unwrap_or(-1),
-            other_stderr.trim()
+            status.code().unwrap_or(-1),
+            stderr_other.trim()
         ));
     }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = String::from_utf8_lossy(&stdout_bytes);
     serde_json::from_str(&stdout).map_err(|e| {
         let preview: String = stdout.chars().take(200).collect();
         format!("JSON parse failed: {} — stdout preview: {}", e, preview)
