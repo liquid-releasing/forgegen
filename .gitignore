@@ -53,6 +53,7 @@ site/
 internal/
 testcases/
 test_funscript/
+test_media/
 
 # Streamlit local state
 .streamlit/secrets.toml

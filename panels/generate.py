@@ -414,7 +414,9 @@ def render() -> None:
 
     # Compute modes once (used for chart colouring even before generate)
     if st.session_state.modes is None:
-        st.session_state.modes = classify_modes(bm)
+        st.session_state.modes = classify_modes(
+            bm, chapters=st.session_state.chapters or None,
+        )
     modes = st.session_state.modes
 
     _TONE_TRAJECTORIES = {

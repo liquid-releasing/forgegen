@@ -49,14 +49,21 @@ that tool.
 
 ## How it works
 
+> **forgegen reads the structure of the audio and generates against that structure — not against an undifferentiated stream.**
+
+A 90-minute video opens with ambient pacing, builds through tension, peaks, and cools down. Whole-file analysis flattens that — the loud climax dominates the energy distribution, the quiet sections get crushed, and the resulting funscript is either music-only-good or motionless on long-form material. forgegen detects the natural sections of the audio first, then runs the analysis once per section, so each section's pacing is preserved in the output.
+
 ```text
-Audio → Beat & energy analysis → Phrase classification → Curve shaping → .funscript
+Audio → Audio structure → Per-section beat & energy → Per-section classification → Curve shaping → .funscript
 ```
 
-1. **Analyse** — detect beat grid, BPM, phrase boundaries, and energy envelope.
-2. **Classify** — label each phrase: `break`, `tease`, `slow`, `steady`, `fast`, or `edging`.
-3. **Shape** — sculpt the motion curve per mode (tease = narrow, edging = builds 50→100%, break = minimal).
-4. **Export** — validated `.funscript` JSON, compatible with every major player and editor.
+1. **Structure** — detect natural sections from silence, recurrence, and energy transitions (typically chapters of around 5–6 minutes). Written to a small `<stem>.chapters.json` sidecar so other lqr tools see the same sections.
+2. **Analyse** — detect beat grid, BPM, phrase boundaries, and energy envelope per chapter; energy normalises within each section's own range so a quiet ambient passage isn't drowned out by a loud climax elsewhere in the file.
+3. **Classify** — label each phrase relative to its chapter's distribution: `break`, `tease`, `slow`, `steady`, `fast`, or `edging`. A phrase that's average for its quiet ambient chapter classifies as `steady` — not crushed to `break` because its absolute energy is low.
+4. **Shape** — sculpt the motion curve per mode (tease = narrow, edging = builds 50→100%, break = minimal).
+5. **Export** — validated `.funscript` JSON, compatible with every major player and editor.
+
+The chapter sidecar is shared across the lqr toolchain. ForgePlayer uses it for navigation on videos that have no built-in chapter markers; ForgeAssembler uses it as suggested cut points; FunscriptForge overlays it as a second ruler-track in the editor. Refining chapters in one tool flows through to the others — forgegen picks them up automatically on the next run.
 
 ---
 
