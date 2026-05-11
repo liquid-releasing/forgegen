@@ -1,81 +1,70 @@
-import { useState, useEffect } from 'react';
+// App shell — TopBar (env badge + tab nav) + active tab body.
+// Sidecar state lifted here so Project and Analysis can share it.
+
+import { useState } from 'react';
 import Project from './tabs/Project.jsx';
-import { listPatterns, isTauri } from './api/videoflow.js';
+import Analysis from './tabs/Analysis.jsx';
+import { isTauri } from './api/videoflow.js';
+
+const TABS = [
+  { id: 'project', label: 'Project', enabled: true },
+  { id: 'analysis', label: 'Analysis', enabled: true },
+  { id: 'generate', label: 'Generate', enabled: false },
+  { id: 'device', label: 'Device', enabled: false },
+  { id: 'export', label: 'Export', enabled: false },
+];
 
 export default function App() {
-  const [patterns, setPatterns] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    listPatterns()
-      .then((data) => {
-        setPatterns(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(String(err));
-        setLoading(false);
-      });
-  }, []);
+  const [tab, setTab] = useState('project');
+  const [sidecar, setSidecar] = useState(null);
 
   return (
     <div className="app">
       <header className="topbar">
         <h1>forgegen</h1>
-        <span className="version">scaffold v0</span>
-        <span className="env-badge" data-env={isTauri() ? 'tauri' : 'browser'}>
+        <span className="version">scaffold v0.1</span>
+
+        <nav className="tabstrip">
+          {TABS.map((t) => {
+            const active = t.id === tab;
+            const requiresSidecar = t.id === 'analysis' && !sidecar;
+            const disabled = !t.enabled || requiresSidecar;
+            return (
+              <button
+                key={t.id}
+                onClick={() => !disabled && setTab(t.id)}
+                disabled={disabled}
+                title={
+                  !t.enabled
+                    ? 'Not yet implemented'
+                    : requiresSidecar
+                    ? 'Load a sidecar via Project tab first'
+                    : ''
+                }
+                className={`tabbutton ${active ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        <span
+          className="env-badge"
+          data-env={isTauri() ? 'tauri' : 'browser'}
+          title={
+            isTauri()
+              ? 'Real Tauri runtime — bridge calls reach videoflow'
+              : 'Browser-only — bridge calls return mock data'
+          }
+        >
           {isTauri() ? 'Tauri' : 'browser-only'}
         </span>
       </header>
 
       <main>
-        <Project />
-
-        <section className="bridge-test">
-          <h2>Bridge sanity check — videoflow patterns-list</h2>
-
-          {loading && <div className="status">Loading…</div>}
-
-          {error && (
-            <div className="error">
-              <strong>Bridge error:</strong> {error}
-              {!isTauri() && (
-                <p className="hint">
-                  Browser-only mode — the bridge can't reach videoflow without
-                  Tauri. Run <code>npm run tauri:dev</code> for the real bridge.
-                </p>
-              )}
-            </div>
-          )}
-
-          {patterns && (
-            <>
-              <div className="status">
-                {patterns.patterns.length} patterns loaded
-                {!isTauri() && <span className="muted"> (mock data)</span>}
-              </div>
-              <ul className="patterns">
-                {patterns.patterns.map((p) => (
-                  <li key={p.id} style={{ borderLeftColor: p.color }}>
-                    <div className="pattern-head">
-                      <strong>{p.label}</strong>
-                      <code>{p.id}</code>
-                    </div>
-                    <div className="pattern-summary">{p.summary}</div>
-                    <div className="pattern-consumers">
-                      {p.consumers.map((c) => (
-                        <span key={c} className="consumer-chip">
-                          {c}
-                        </span>
-                      ))}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </section>
+        {tab === 'project' && <Project sidecar={sidecar} onSidecarLoaded={setSidecar} />}
+        {tab === 'analysis' && <Analysis sidecar={sidecar} />}
       </main>
     </div>
   );

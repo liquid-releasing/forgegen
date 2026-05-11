@@ -1,0 +1,215 @@
+// Analysis tab — read-only viewer of videoflow's sidecar output.
+// Reflects the 5 refinement decisions in
+// ../../forgegen/ANALYSIS_TAB_REFINEMENT.md:
+//   1. waveform → beat-strength density bars (no synthetic envelope)
+//   2. chapter strip → contentType only, drop Style/Tone
+//   3. KPI strip → pre-generation stats only, no PRE/POST comparisons
+//   4. drop _MODE_FROM_TAG mapping → consume phrases[].mode directly
+//   5. confidence → overlay (dim chapters + ⚠ marker + provenance footer),
+//      not a standalone card. Standalone card lives in FFP later.
+
+import { useState } from 'react';
+import ChapterStrip from '../components/analysis/ChapterStrip.jsx';
+import KpiStrip from '../components/analysis/KpiStrip.jsx';
+import CategoryCards, { CATEGORIES } from '../components/analysis/CategoryCards.jsx';
+import { ActiveCardCanvas } from '../components/analysis/cards.jsx';
+import ChapterFocusRow from '../components/analysis/ChapterFocusRow.jsx';
+import BottomCharts from '../components/analysis/BottomCharts.jsx';
+import BeatStrengthBars from '../components/analysis/BeatStrengthBars.jsx';
+import {
+  chapterColor,
+  chapterDurationMs,
+  lastProvenance,
+  totalDurationMs,
+} from '../lib/analysis.js';
+
+function ProvenanceFooter({ sidecar }) {
+  const prov = lastProvenance(sidecar);
+  if (!prov) return null;
+  return (
+    <div
+      style={{
+        paddingTop: 12,
+        borderTop: '1px solid var(--border)',
+        fontSize: 11,
+        color: 'var(--muted)',
+        fontFamily: 'ui-monospace, "Cascadia Code", Consolas, monospace',
+        textAlign: 'center',
+      }}
+    >
+      Last analyzed by {prov.writer} {prov.version} · {prov.timestamp}
+    </div>
+  );
+}
+
+function MainTimeline({ sidecar, focusedIdx, onFocus }) {
+  const total = totalDurationMs(sidecar);
+  return (
+    <div
+      style={{
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        padding: 6,
+      }}
+    >
+      <div style={{ background: 'var(--bg)', padding: 4, borderRadius: 4 }}>
+        <BeatStrengthBars
+          beatMap={sidecar.energy?.beat_map}
+          height={120}
+          color="#5b6cff"
+          showDownbeats
+        />
+      </div>
+      {/* Chapter ribbon below bars */}
+      <div style={{ display: 'flex', height: 22, gap: 0, marginTop: 4 }}>
+        {sidecar.chapters.map((c, i) => {
+          const flex = chapterDurationMs(c) / total;
+          const focused = i === focusedIdx;
+          return (
+            <div
+              key={i}
+              onClick={() => onFocus(i)}
+              style={{
+                flex,
+                background: focused
+                  ? chapterColor(c)
+                  : `color-mix(in srgb, ${chapterColor(c)} 65%, transparent)`,
+                borderTop: focused ? '2px solid var(--fg)' : 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 10px',
+                fontSize: 10,
+                fontWeight: 700,
+                color: 'rgba(255,255,255,0.95)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+              }}
+            >
+              {c.name || `Chapter ${i + 1}`}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function Analysis({ sidecar, onContinue }) {
+  const [focusedIdx, setFocusedIdx] = useState(0);
+  const [category, setCategory] = useState('structure');
+
+  if (!sidecar) {
+    return (
+      <section className="tab-panel">
+        <h2>Analysis</h2>
+        <div style={{ color: 'var(--muted)', maxWidth: 540, lineHeight: 1.5 }}>
+          No sidecar loaded yet. Switch to the{' '}
+          <strong style={{ color: 'var(--fg)' }}>Project</strong> tab and click{' '}
+          <em>Load test data</em>, then come back here.
+        </div>
+      </section>
+    );
+  }
+
+  const cat = CATEGORIES.find((c) => c.id === category) || CATEGORIES[0];
+
+  return (
+    <section className="tab-panel" style={{ padding: 0, border: 'none', background: 'transparent' }}>
+      <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+        {/* 1. Page promise */}
+        <div
+          style={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+            borderLeft: '3px solid var(--accent)',
+            borderRadius: 6,
+            padding: '12px 16px',
+            fontSize: 13,
+            color: 'var(--muted)',
+            lineHeight: 1.55,
+          }}
+        >
+          <span style={{ color: 'var(--fg)', fontWeight: 600 }}>Analysis</span>
+          {' — '}
+          Reads the structure of the audio and generates against that structure — so a
+          long scene that opens ambient and ends music-driven feels like both, not like
+          the average of them.
+        </div>
+
+        {/* 2. Chapter strip */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: 1,
+            }}
+          >
+            Script overview · click a chapter to focus
+          </div>
+          <ChapterStrip sidecar={sidecar} focusedIdx={focusedIdx} onFocus={setFocusedIdx} />
+        </div>
+
+        {/* 3. Big timeline (beat-strength bars + chapter ribbon) */}
+        <MainTimeline sidecar={sidecar} focusedIdx={focusedIdx} onFocus={setFocusedIdx} />
+
+        {/* 4. KPI strip — pre-generation stats only */}
+        <KpiStrip sidecar={sidecar} />
+
+        {/* 5. Category cards (4) */}
+        <CategoryCards sidecar={sidecar} active={category} onChange={setCategory} />
+
+        {/* 6. Active card canvas */}
+        <ActiveCardCanvas
+          sidecar={sidecar}
+          categoryId={category}
+          headline={cat.headline}
+          desc={cat.desc}
+          label={cat.label}
+        />
+
+        {/* 7. Per-chapter focus row */}
+        <ChapterFocusRow sidecar={sidecar} focusedIdx={focusedIdx} onFocus={setFocusedIdx} />
+
+        {/* 8. Bottom charts (beat energy + beat map) */}
+        <BottomCharts sidecar={sidecar} />
+
+        {/* 9. Generate CTA */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+            Looks right?
+          </span>
+          <button
+            onClick={onContinue}
+            disabled
+            title="Generate tab not yet implemented"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '12px 22px',
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              color: 'var(--muted)',
+              fontFamily: 'inherit',
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'not-allowed',
+            }}
+          >
+            Generate funscript →
+          </button>
+        </div>
+
+        {/* Provenance footer (Confidence overlay item per decision #5) */}
+        <ProvenanceFooter sidecar={sidecar} />
+      </div>
+    </section>
+  );
+}
