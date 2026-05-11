@@ -1,15 +1,16 @@
 // App shell — TopBar (env badge + tab nav) + active tab body.
-// Sidecar state lifted here so Project and Analysis can share it.
+// Sidecar + mediaPath lifted here so Project / Analysis / Generate can share.
 
 import { useState } from 'react';
 import Project from './tabs/Project.jsx';
 import Analysis from './tabs/Analysis.jsx';
+import Generate from './tabs/Generate.jsx';
 import { isTauri } from './api/videoflow.js';
 
 const TABS = [
   { id: 'project', label: 'Project', enabled: true },
   { id: 'analysis', label: 'Analysis', enabled: true },
-  { id: 'generate', label: 'Generate', enabled: false },
+  { id: 'generate', label: 'Generate', enabled: true },
   { id: 'device', label: 'Device', enabled: false },
   { id: 'export', label: 'Export', enabled: false },
 ];
@@ -17,6 +18,7 @@ const TABS = [
 export default function App() {
   const [tab, setTab] = useState('project');
   const [sidecar, setSidecar] = useState(null);
+  const [mediaPath, setMediaPath] = useState(null);
 
   return (
     <div className="app">
@@ -27,8 +29,8 @@ export default function App() {
         <nav className="tabstrip">
           {TABS.map((t) => {
             const active = t.id === tab;
-            const requiresSidecar = t.id === 'analysis' && !sidecar;
-            const disabled = !t.enabled || requiresSidecar;
+            const needsSidecar = (t.id === 'analysis' || t.id === 'generate') && !sidecar;
+            const disabled = !t.enabled || needsSidecar;
             return (
               <button
                 key={t.id}
@@ -37,7 +39,7 @@ export default function App() {
                 title={
                   !t.enabled
                     ? 'Not yet implemented'
-                    : requiresSidecar
+                    : needsSidecar
                     ? 'Load a sidecar via Project tab first'
                     : ''
                 }
@@ -67,10 +69,14 @@ export default function App() {
           <Project
             sidecar={sidecar}
             onSidecarLoaded={setSidecar}
+            onMediaPathChanged={setMediaPath}
             onSwitchToAnalysis={() => setTab('analysis')}
           />
         )}
-        {tab === 'analysis' && <Analysis sidecar={sidecar} />}
+        {tab === 'analysis' && (
+          <Analysis sidecar={sidecar} onContinue={() => setTab('generate')} />
+        )}
+        {tab === 'generate' && <Generate sidecar={sidecar} mediaPath={mediaPath} />}
       </main>
     </div>
   );

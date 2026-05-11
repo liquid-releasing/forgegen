@@ -38,6 +38,22 @@ export async function readSidecar(path) {
   return invokeOrMock('read_sidecar', { path }, () => mockReadSidecar(path));
 }
 
+/** Generate a funscript from `path` using the supplied options.
+ *
+ * options shape (matches Rust GenerateOptions):
+ *   { source: 'full'|'percussive', density: 'half'|'full'|'1'|'2'|'4'|'8',
+ *     tone: 'flat'|'rise'|'fall'|'auto', emphasize_beats: boolean }
+ *
+ * Returns { output, bpm, beats, phrases, duration_ms } from videoflow CLI.
+ */
+export async function generateFunscript(path, options) {
+  return invokeOrMock(
+    'generate_funscript',
+    { path, options },
+    () => mockGenerateFunscript(path, options)
+  );
+}
+
 // ---------------------------------------------------------------------------
 // File picker — Tauri dialog plugin (native) or HTML <input> stub (browser)
 // ---------------------------------------------------------------------------
@@ -132,6 +148,27 @@ function mockReadSidecar(_path) {
 function mockPickAudioFile() {
   // Stable fake path so the rest of the flow can be exercised in browser.
   return Promise.resolve('browser-mock://demo-track.mp3');
+}
+
+function mockGenerateFunscript(path, options) {
+  // Simulate a 1.2s synthesis so the spinner UI is exercised.
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const stem = String(path).replace(/\.[^.]+$/, '');
+      const density = options?.density ?? 'half';
+      // Rough action count for the mock sidecar (~2400 beats × density factor)
+      const factor = { half: 1, full: 2, '1': 1, '2': 2, '4': 4, '8': 8 }[density] ?? 1;
+      resolve({
+        output: `${stem}.funscript`,
+        bpm: 122.0,
+        beats: 1240,
+        phrases: 32,
+        duration_ms: 572000,
+        actions: 1240 * factor,
+        mocked: true,
+      });
+    }, 1200);
+  });
 }
 
 // ---------------------------------------------------------------------------

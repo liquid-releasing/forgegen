@@ -9,6 +9,7 @@ pub fn run() {
             commands::analyze_media,
             commands::auto_chapter,
             commands::read_sidecar,
+            commands::generate_funscript,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

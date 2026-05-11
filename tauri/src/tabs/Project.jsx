@@ -26,7 +26,7 @@ const PHASES = {
   ERROR: 'error',
 };
 
-export default function Project({ sidecar, onSidecarLoaded, onSwitchToAnalysis }) {
+export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, onSwitchToAnalysis }) {
   const [phase, setPhase] = useState(sidecar ? PHASES.LOADED : PHASES.IDLE);
   const [path, setPath] = useState(null);
   const [error, setError] = useState(null);
@@ -43,6 +43,7 @@ export default function Project({ sidecar, onSidecarLoaded, onSwitchToAnalysis }
         return;
       }
       setPath(picked);
+      onMediaPathChanged?.(picked);
 
       // Step 1: try to load an existing sidecar — avoids re-analysing
       setPhase(PHASES.CHECKING);

@@ -139,3 +139,61 @@ pub async fn read_sidecar(path: String) -> Result<Option<Value>, String> {
     let sidecar = sidecar_path_for(&path)?;
     read_sidecar_at(&sidecar).await
 }
+
+// ---------------------------------------------------------------------------
+// generate_funscript
+// ---------------------------------------------------------------------------
+
+/// Per-track funscript generation options. v0.1 uses a single recipe across
+/// the whole track (the per-chapter authoring form sends row 1's values for
+/// now). Per-chapter recipe support requires a videoflow CLI extension —
+/// tracked in `forgegen/REFACTOR_TO_TAURI_REACT.md` v0.2 milestone.
+#[derive(serde::Deserialize)]
+pub struct GenerateOptions {
+    /// `--source`: "full" or "percussive"
+    pub source: String,
+    /// `--stroke-density`: "half" | "full" | "1" | "2" | "4" | "8"
+    pub density: String,
+    /// `--tone`: "flat" | "rise" | "fall" | "auto"
+    pub tone: String,
+    /// UI-only for v0.1 (videoflow doesn't yet boost downbeats from this flag).
+    /// Kept on the wire so the CLI extension lands non-breaking later.
+    #[serde(default)]
+    pub emphasize_beats: bool,
+}
+
+/// Run `videoflow generate-funscript <input> <output> --source ... --tone ... --stroke-density ...`
+/// and return the parsed JSON result. Output path defaults to `<stem>.funscript`
+/// next to the media file.
+#[tauri::command]
+pub async fn generate_funscript(
+    path: String,
+    options: GenerateOptions,
+) -> Result<Value, String> {
+    let p = Path::new(&path);
+    let stem = p
+        .file_stem()
+        .ok_or_else(|| format!("invalid media path (no stem): {}", path))?
+        .to_string_lossy()
+        .to_string();
+    let parent = p
+        .parent()
+        .ok_or_else(|| format!("invalid media path (no parent): {}", path))?;
+    let out_path = parent.join(format!("{}.funscript", stem));
+    let out_str = out_path.to_string_lossy().to_string();
+
+    let _ = options.emphasize_beats; // accepted for forward-compat; CLI flag pending
+
+    spawn_videoflow(&[
+        "generate-funscript",
+        &path,
+        &out_str,
+        "--source",
+        &options.source,
+        "--stroke-density",
+        &options.density,
+        "--tone",
+        &options.tone,
+    ])
+    .await
+}
