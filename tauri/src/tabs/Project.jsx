@@ -40,6 +40,7 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
   const [error, setError] = useState(null);
   const [reusedSidecar, setReusedSidecar] = useState(false);
   const [elapsedSec, setElapsedSec] = useState(0);
+  const [stage, setStage] = useState(null);
   const intervalRef = useRef(null);
 
   // Tick an elapsed-time counter while we're in CHECKING/ANALYZING phases
@@ -64,6 +65,7 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
   async function handlePick() {
     setError(null);
     setReusedSidecar(false);
+    setStage(null);
     setPhase(PHASES.PICKING);
     try {
       const picked = await pickAudioFile();
@@ -84,9 +86,10 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
         return;
       }
 
-      // Step 2: no sidecar yet → run auto-chapter
+      // Step 2: no sidecar yet → run auto-chapter, streaming per-stage
+      // labels from videoflow stderr into the busy panel
       setPhase(PHASES.ANALYZING);
-      const fresh = await autoChapter(picked);
+      const fresh = await autoChapter(picked, (label) => setStage(label));
       onSidecarLoaded(fresh);
       setPhase(PHASES.LOADED);
     } catch (err) {
@@ -173,20 +176,34 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
               fontSize: 12,
               color: 'var(--muted)',
               display: 'flex',
-              alignItems: 'center',
-              gap: 8,
+              flexDirection: 'column',
+              gap: 6,
             }}
           >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                background: 'var(--accent)',
-                animation: 'pulse 1.2s ease-in-out infinite',
-              }}
-            />
-            {busyLabel}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: 'var(--accent)',
+                  animation: 'pulse 1.2s ease-in-out infinite',
+                }}
+              />
+              {busyLabel}
+            </div>
+            {stage && phase === PHASES.ANALYZING && (
+              <div
+                style={{
+                  paddingLeft: 16,
+                  fontSize: 11,
+                  color: 'var(--accent)',
+                  fontFamily: 'ui-monospace, "Cascadia Code", Consolas, monospace',
+                }}
+              >
+                ▸ {stage}
+              </div>
+            )}
           </div>
         )}
 

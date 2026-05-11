@@ -7,6 +7,9 @@
 
 use serde_json::Value;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
+use tauri::{AppHandle, Emitter};
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 // ---------------------------------------------------------------------------
@@ -99,6 +102,67 @@ async fn spawn_videoflow(args: &[&str]) -> Result<Value, String> {
     })
 }
 
+/// Spawn videoflow and stream stderr line-by-line. Lines prefixed with
+/// `progress: ` are emitted as Tauri events on `event_name` so the React
+/// UI can render per-stage status during long runs. Other stderr lines
+/// are accumulated for the error path. After the process exits, stdout
+/// is parsed as JSON the same way `spawn_videoflow` does.
+async fn spawn_videoflow_streaming(
+    app: &AppHandle,
+    event_name: &str,
+    args: &[&str],
+) -> Result<Value, String> {
+    let bin = videoflow_bin();
+
+    let mut child = Command::new(&bin)
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("spawn '{}' failed: {}", bin.display(), e))?;
+
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "failed to capture videoflow stderr".to_string())?;
+
+    let app_for_task = app.clone();
+    let event_name_owned = event_name.to_string();
+    let stderr_task = tokio::spawn(async move {
+        let mut reader = BufReader::new(stderr).lines();
+        let mut other = String::new();
+        while let Ok(Some(line)) = reader.next_line().await {
+            if let Some(msg) = line.strip_prefix("progress: ") {
+                let _ = app_for_task.emit(&event_name_owned, msg.to_string());
+            } else if !line.is_empty() {
+                other.push_str(&line);
+                other.push('\n');
+            }
+        }
+        other
+    });
+
+    let output = child
+        .wait_with_output()
+        .await
+        .map_err(|e| format!("wait videoflow failed: {}", e))?;
+    let other_stderr = stderr_task.await.unwrap_or_default();
+
+    if !output.status.success() {
+        return Err(format!(
+            "videoflow exit {} — stderr: {}",
+            output.status.code().unwrap_or(-1),
+            other_stderr.trim()
+        ));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    serde_json::from_str(&stdout).map_err(|e| {
+        let preview: String = stdout.chars().take(200).collect();
+        format!("JSON parse failed: {} — stdout preview: {}", e, preview)
+    })
+}
+
 // ---------------------------------------------------------------------------
 // Tauri commands (mirror src/api/videoflow.js)
 // ---------------------------------------------------------------------------
@@ -115,11 +179,12 @@ pub async fn analyze_media(path: String) -> Result<Value, String> {
 
 /// Run `videoflow auto-chapter` and return the full sidecar contents
 /// it wrote to `<stem>.chapters.json`. Combines two calls (CLI + read)
-/// so React only does one round-trip.
+/// so React only does one round-trip. Streams per-stage progress via
+/// the `auto_chapter_progress` Tauri event so the UI can render live
+/// status during multi-minute runs on long files.
 #[tauri::command]
-pub async fn auto_chapter(path: String) -> Result<Value, String> {
-    // Run analysis — writes <stem>.chapters.json as side effect
-    spawn_videoflow(&["auto-chapter", &path]).await?;
+pub async fn auto_chapter(app: AppHandle, path: String) -> Result<Value, String> {
+    spawn_videoflow_streaming(&app, "auto_chapter_progress", &["auto-chapter", &path]).await?;
 
     // Read the sidecar that was just written
     let sidecar = sidecar_path_for(&path)?;

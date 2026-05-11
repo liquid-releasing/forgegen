@@ -29,8 +29,29 @@ export async function analyzeMedia(path) {
   return invokeOrMock('analyze_media', { path }, () => mockAnalyzeMedia(path));
 }
 
-export async function autoChapter(path) {
-  return invokeOrMock('auto_chapter', { path }, () => mockAutoChapter(path));
+/** Run auto-chapter on `path`. Optional `onProgress(stageLabel)` is invoked
+ * for each per-stage progress line streamed from videoflow's stderr (e.g.
+ * "Loading audio (librosa)…", "Analysing beats and energy…"). The
+ * subscription is set up before the bridge call and torn down on resolve
+ * or reject — caller doesn't need to manage cleanup.
+ */
+export async function autoChapter(path, onProgress) {
+  if (!isTauri()) {
+    return mockAutoChapter(path, onProgress);
+  }
+  let unlisten = null;
+  if (typeof onProgress === 'function') {
+    const { listen } = await import('@tauri-apps/api/event');
+    unlisten = await listen('auto_chapter_progress', (e) => {
+      try { onProgress(String(e.payload)); } catch { /* never break the run */ }
+    });
+  }
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    return await invoke('auto_chapter', { path });
+  } finally {
+    if (unlisten) unlisten();
+  }
 }
 
 /** Read existing <stem>.chapters.json next to media path. Returns null if missing. */
@@ -132,11 +153,36 @@ function mockAnalyzeMedia(path) {
   );
 }
 
-function mockAutoChapter(_path) {
+function mockAutoChapter(_path, onProgress) {
   // Returns a realistic videoflow.sidecar v2 shape. Mirrors what
   // videoflow.structural.auto_chapter() would write to <stem>.chapters.json
   // for a ~9.5 minute music track with intro/build/climax/recover structure.
-  return Promise.resolve(buildMockSidecar());
+  // If onProgress is supplied, simulate a few stage labels with delays so
+  // browser-mode UI dev exercises the live-progress code path.
+  if (typeof onProgress !== 'function') {
+    return Promise.resolve(buildMockSidecar());
+  }
+  const STAGES = [
+    'Extracting audio from video (ffmpeg)…',
+    'Loading audio (librosa)…',
+    'Detecting chapter boundaries…',
+    'Analysing beats and energy…',
+    'Classifying phrases…',
+    'Writing sidecar…',
+  ];
+  return new Promise((resolve) => {
+    let i = 0;
+    const tick = () => {
+      if (i < STAGES.length) {
+        try { onProgress(STAGES[i]); } catch { /* swallow */ }
+        i += 1;
+        setTimeout(tick, 500);
+      } else {
+        resolve(buildMockSidecar());
+      }
+    };
+    tick();
+  });
 }
 
 function mockReadSidecar(_path) {
