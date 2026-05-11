@@ -1325,14 +1325,20 @@
 <p>forgegen is that tool.</p>
 <hr />
 <h2 id="how-it-works">How it works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Media file → Beat &amp; energy analysis → Phrase classification → Curve shaping → .funscript
+<blockquote>
+<p><strong>forgegen reads the structure of the audio and generates against that structure — not against an undifferentiated stream.</strong></p>
+</blockquote>
+<p>That's the difference between forgegen and every other audio→funscript tool. A 90-minute video opens with ambient pacing, builds through tension, peaks, and cools down. Whole-file analysis flattens that — the loud climax dominates the energy distribution, the quiet sections get crushed, and the resulting funscript is either music-only-good or motionless. forgegen detects the natural sections of the audio first, then runs the analysis once per section, so each section's pacing is preserved in the output.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Media file → Audio structure → Per-section beat &amp; energy → Per-section classification → Curve shaping → .funscript
 </code></pre></div>
 <ol>
-<li><strong>Analyse</strong> — forgegen detects the beat grid, BPM, phrase boundaries, and energy envelope. For music, this uses librosa's beat tracker with optional harmonic-percussive stem separation.</li>
-<li><strong>Classify</strong> — each phrase is labelled automatically: <code>break</code>, <code>tease</code>, <code>slow</code>, <code>steady</code>, <code>fast</code>, or <code>edging</code>, based on the phrase's average energy, tempo, and energy trend.</li>
+<li><strong>Structure</strong> — forgegen detects natural sections from silence, recurrence, and energy transitions in the audio (typically chapters of around 5–6 minutes). On a long-form video this is the difference between a usable funscript and a flat one. The detected chapters are written to a small sidecar JSON next to the source, so any other lqr tool reading the same file sees the same sections.</li>
+<li><strong>Analyse</strong> — forgegen detects the beat grid, BPM, phrase boundaries, and energy envelope. With chapters, this runs <em>per chapter</em> — energy normalises within each section's own range, so a quiet ambient passage isn't drowned out by a loud climax somewhere else in the file.</li>
+<li><strong>Classify</strong> — each phrase is labelled automatically: <code>break</code>, <code>tease</code>, <code>slow</code>, <code>steady</code>, <code>fast</code>, or <code>edging</code>, based on the phrase's energy, tempo, and trend <em>relative to its chapter's distribution</em>. A phrase that's average for its quiet ambient chapter classifies as <code>steady</code> — not crushed to <code>break</code> because its absolute energy is low.</li>
 <li><strong>Shape</strong> — the motion curve is sculpted per mode. A <code>tease</code> phrase has narrow amplitude. An <code>edging</code> phrase builds from 50% to full range. A <code>break</code> nearly stops the device. The curve feels written, not generated.</li>
 <li><strong>Export</strong> — a validated, sorted <code>.funscript</code> JSON is ready to load in FunScriptForge, SyncPlayer, or any compatible player.</li>
 </ol>
+<p>The chapter sidecar is shared with the rest of the lqr toolchain. ForgePlayer uses the same chapters for navigation on videos that have no built-in chapter markers. ForgeAssembler uses them as suggested cut points. FunscriptForge overlays them as a second ruler track in the editor — when the audio's structure and the script's phrase analysis agree you've got a clean section to edit; when they diverge, you've got a teaching moment about the script. All four apps read and write the same <code>&lt;stem&gt;.chapters.json</code>; refining chapters in one tool flows through to the others.</p>
 <hr />
 <h2 id="where-it-fits">Where it fits<a class="headerlink" href="#where-it-fits" title="Permanent link">&para;</a></h2>
 <p>forgegen is the <strong>generation</strong> layer. FunScriptForge is the <strong>editing</strong> layer. Together they cover the full pipeline.</p>
