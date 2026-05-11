@@ -1,0 +1,6 @@
+# Cargo build outputs
+target/
+gen/
+
+# Lockfile — opinions vary; check it in for reproducible Tauri builds in CI later
+# Cargo.lock

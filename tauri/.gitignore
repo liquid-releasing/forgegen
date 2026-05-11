@@ -1,0 +1,19 @@
+# Node / Vite
+node_modules/
+dist/
+*.log
+.vite/
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/Cargo.lock
+src-tauri/gen/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
