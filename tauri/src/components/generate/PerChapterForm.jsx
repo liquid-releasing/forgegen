@@ -18,6 +18,7 @@ import {
   contentTypeLabel,
   fmtTime,
 } from '../../lib/analysis.js';
+import { exceedsHeadroom } from '../../lib/targets.js';
 
 export const STYLE_OPTIONS = [
   { value: 'percussive', label: 'Percussive — drums lead' },
@@ -110,6 +111,7 @@ export default function PerChapterForm({
   perChapter,
   recipes,
   onChange,
+  target,
 }) {
   return (
     <div
@@ -190,17 +192,32 @@ export default function PerChapterForm({
                   </select>
                 </td>
                 <td style={cellStyle}>
-                  <select
-                    value={r.density}
-                    onChange={(e) => onChange(i, { ...r, density: e.target.value })}
-                    style={selectStyle}
-                  >
-                    {DENSITY_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <select
+                      value={r.density}
+                      onChange={(e) => onChange(i, { ...r, density: e.target.value })}
+                      style={{
+                        ...selectStyle,
+                        borderColor: exceedsHeadroom(target, r.density)
+                          ? 'var(--warning)'
+                          : 'var(--border)',
+                      }}
+                    >
+                      {DENSITY_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                    {exceedsHeadroom(target, r.density) && (
+                      <span
+                        title={`Exceeds ${target.label} max safe density (${target.maxSafeDensity}). The device may drop or smear actions.`}
+                        style={{ color: 'var(--warning)', cursor: 'help' }}
+                      >
+                        ⚠
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td style={cellStyle}>
                   <select

@@ -24,6 +24,9 @@ import PerChapterForm, {
 } from '../components/generate/PerChapterForm.jsx';
 import { generateFunscript, isTauri } from '../api/videoflow.js';
 import { fmtTime } from '../lib/analysis.js';
+import { TARGETS, getTarget } from '../lib/targets.js';
+
+const DEFAULT_TARGET_ID = 'keon';
 
 const PHASES = {
   IDLE: 'idle',
@@ -58,7 +61,8 @@ function NoMediaPathHint() {
   );
 }
 
-function BulkApply({ value, onChange, onApplyAll }) {
+function BulkApply({ value, onChange, onApplyAll, targetId, onTargetChange }) {
+  const target = getTarget(targetId);
   return (
     <div
       style={{
@@ -72,6 +76,21 @@ function BulkApply({ value, onChange, onApplyAll }) {
         alignItems: 'flex-end',
       }}
     >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 180 }}>
+        <label style={labelStyle}>Target device</label>
+        <select
+          value={targetId}
+          onChange={(e) => onTargetChange(e.target.value)}
+          style={selectStyle}
+          title={target.summary}
+        >
+          {TARGETS.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 160 }}>
         <label style={labelStyle}>Style</label>
         <select
@@ -269,9 +288,16 @@ function ResultPanel({ result, mediaPath }) {
 }
 
 export default function Generate({ sidecar, mediaPath }) {
-  const [bulk, setBulk] = useState(DEFAULT_RECIPE);
+  const initialTarget = getTarget(DEFAULT_TARGET_ID);
+  const initialRecipe = {
+    ...DEFAULT_RECIPE,
+    density: initialTarget.recommendedDensity || DEFAULT_RECIPE.density,
+  };
+
+  const [targetId, setTargetId] = useState(DEFAULT_TARGET_ID);
+  const [bulk, setBulk] = useState(initialRecipe);
   const [recipes, setRecipes] = useState(() =>
-    (sidecar?.chapters || []).map(() => ({ ...DEFAULT_RECIPE }))
+    (sidecar?.chapters || []).map(() => ({ ...initialRecipe }))
   );
   const [phase, setPhase] = useState(PHASES.IDLE);
   const [result, setResult] = useState(null);
@@ -291,6 +317,15 @@ export default function Generate({ sidecar, mediaPath }) {
   if (!mediaPath) return <NoMediaPathHint />;
 
   const perChapter = sidecar?.energy?.per_chapter;
+  const target = getTarget(targetId);
+
+  function handleTargetChange(nextId) {
+    setTargetId(nextId);
+    const next = getTarget(nextId);
+    if (next.recommendedDensity) {
+      setBulk((b) => ({ ...b, density: next.recommendedDensity }));
+    }
+  }
 
   function updateRecipe(idx, next) {
     setRecipes((prev) => prev.map((r, i) => (i === idx ? next : r)));
@@ -349,7 +384,25 @@ export default function Generate({ sidecar, mediaPath }) {
         {/* 3. Bulk-apply controls */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={labelStyle}>Track defaults</div>
-          <BulkApply value={bulk} onChange={setBulk} onApplyAll={applyBulkToAll} />
+          <BulkApply
+            value={bulk}
+            onChange={setBulk}
+            onApplyAll={applyBulkToAll}
+            targetId={targetId}
+            onTargetChange={handleTargetChange}
+          />
+          <div style={{ fontSize: 11, color: 'var(--muted)', paddingLeft: 4 }}>
+            <strong style={{ color: 'var(--fg)' }}>{target.label}:</strong>{' '}
+            {target.summary}
+            {target.maxSafeDensity && (
+              <>
+                {' · '}
+                <span style={{ fontFamily: 'ui-monospace, monospace' }}>
+                  max safe density: {target.maxSafeDensity}
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* 4. Per-chapter authoring grid */}
@@ -360,6 +413,7 @@ export default function Generate({ sidecar, mediaPath }) {
             perChapter={perChapter}
             recipes={recipes}
             onChange={updateRecipe}
+            target={target}
           />
         </div>
 

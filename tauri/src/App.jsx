@@ -7,12 +7,15 @@ import Analysis from './tabs/Analysis.jsx';
 import Generate from './tabs/Generate.jsx';
 import { isTauri } from './api/videoflow.js';
 
+// Device tab dropped 2026-05-11 — "device" really meant "what stroke
+// density does my toy comfortably sustain?", which fits inline as the
+// Target preset on Generate (see lib/targets.js). Multi-output (funscript
+// + bhaptics + multi-axis from one recipe) lives in Output tab when added.
 const TABS = [
   { id: 'project', label: 'Project', enabled: true },
   { id: 'analysis', label: 'Analysis', enabled: true },
   { id: 'generate', label: 'Generate', enabled: true },
-  { id: 'device', label: 'Device', enabled: false },
-  { id: 'export', label: 'Export', enabled: false },
+  { id: 'output', label: 'Output', enabled: false },
 ];
 
 export default function App() {
