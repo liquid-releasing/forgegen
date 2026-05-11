@@ -14,7 +14,10 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.0", features = [] }
 
 [dependencies]
-tauri = { version = "2.1", features = [] }
+# `devtools` feature: bundles Microsoft Edge WebView2 devtools so users
+# can inspect the page (F12 / Ctrl+Shift+I / right-click → Inspect).
+# Enabled for debug AND release so dev builds always have it available.
+tauri = { version = "2.1", features = ["devtools"] }
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

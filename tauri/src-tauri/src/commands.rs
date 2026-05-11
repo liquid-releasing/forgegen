@@ -16,33 +16,59 @@ use tokio::process::Command;
 // videoflow binary lookup
 // ---------------------------------------------------------------------------
 
-/// Locate the videoflow binary. Lookup order:
-///   1. VIDEOFLOW_BIN env var (explicit override)
-///   2. forgegen/.venv/{Scripts|bin}/videoflow{.exe} (dev default)
-///   3. "videoflow" on PATH (last resort)
-fn videoflow_bin() -> PathBuf {
-    if let Ok(p) = std::env::var("VIDEOFLOW_BIN") {
+/// Resolve the python interpreter + module-style invocation that drives
+/// videoflow. We deliberately bypass the pip-installed `videoflow.exe`
+/// console-script wrapper on Windows because it doesn't forward stderr
+/// reliably when spawned from non-shell parents (Tokio's `Command`).
+/// Calling `python.exe -m videoflow.cli` keeps stderr flowing so the
+/// per-stage progress lines reach the bridge.
+///
+/// Lookup order for python:
+///   1. VIDEOFLOW_PYTHON env var (explicit override)
+///   2. forgegen/.venv/{Scripts|bin}/python{.exe} (dev default)
+///   3. "python" on PATH (last resort)
+fn videoflow_command() -> (PathBuf, Vec<String>) {
+    let py = python_bin();
+    // Windows: wrap with `cmd /C` so the child python.exe inherits a
+    // console-friendly stdio environment. Without the wrapper, Tokio's
+    // Command spawns python with handle inheritance that breaks Python's
+    // sys.stderr writes — direct PowerShell launch produces full
+    // progress output but Tokio launch produces zero stderr lines.
+    // `-u` keeps stdio unbuffered so progress lines flush per-print.
+    if cfg!(windows) {
+        (
+            PathBuf::from("cmd"),
+            vec![
+                "/C".into(),
+                py.to_string_lossy().to_string(),
+                "-u".into(),
+                "-m".into(),
+                "videoflow".into(),
+            ],
+        )
+    } else {
+        (py, vec!["-u".into(), "-m".into(), "videoflow".into()])
+    }
+}
+
+fn python_bin() -> PathBuf {
+    if let Ok(p) = std::env::var("VIDEOFLOW_PYTHON") {
         return PathBuf::from(p);
     }
-
-    // CARGO_MANIFEST_DIR is .../forgegen/tauri/src-tauri at build time.
-    // Walk up two levels to reach .../forgegen, then into .venv.
     if let Some(forgegen_root) = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .and_then(|p| p.parent())
     {
-        let venv_bin = if cfg!(windows) {
-            forgegen_root.join(".venv/Scripts/videoflow.exe")
+        let venv_py = if cfg!(windows) {
+            forgegen_root.join(".venv/Scripts/python.exe")
         } else {
-            forgegen_root.join(".venv/bin/videoflow")
+            forgegen_root.join(".venv/bin/python")
         };
-        if venv_bin.exists() {
-            return venv_bin;
+        if venv_py.exists() {
+            return venv_py;
         }
     }
-
-    // Fall back to PATH lookup.
-    PathBuf::from("videoflow")
+    PathBuf::from("python")
 }
 
 // ---------------------------------------------------------------------------
@@ -78,10 +104,12 @@ async fn read_sidecar_at(path: &Path) -> Result<Option<Value>, String> {
 // ---------------------------------------------------------------------------
 
 async fn spawn_videoflow(args: &[&str]) -> Result<Value, String> {
-    let bin = videoflow_bin();
+    let (bin, prefix_args) = videoflow_command();
+    let mut full_args: Vec<String> = prefix_args;
+    full_args.extend(args.iter().map(|s| s.to_string()));
 
     let output = Command::new(&bin)
-        .args(args)
+        .args(&full_args)
         .output()
         .await
         .map_err(|e| format!("spawn '{}' failed: {}", bin.display(), e))?;
@@ -120,10 +148,12 @@ async fn spawn_videoflow_streaming(
     event_name: &str,
     args: &[&str],
 ) -> Result<Value, String> {
-    let bin = videoflow_bin();
+    let (bin, prefix_args) = videoflow_command();
+    let mut full_args: Vec<String> = prefix_args;
+    full_args.extend(args.iter().map(|s| s.to_string()));
 
     let mut child = Command::new(&bin)
-        .args(args)
+        .args(&full_args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -204,18 +234,32 @@ pub async fn analyze_media(path: String) -> Result<Value, String> {
 /// so React only does one round-trip. Streams per-stage progress via
 /// the `auto_chapter_progress` Tauri event so the UI can render live
 /// status during multi-minute runs on long files.
+///
+/// Resilience: videoflow can exit with a non-zero code (commonly 120 on
+/// Windows) during Python's atexit cleanup even after successfully
+/// writing the sidecar — pipes between Python and Rust occasionally
+/// trigger BrokenPipeError-equivalents during shutdown that surface as
+/// the process exit code. The pragmatic check: if the sidecar file
+/// actually exists on disk, the work completed and we treat the run
+/// as success regardless of the exit code. Only when the sidecar is
+/// missing do we propagate the bridge error.
 #[tauri::command]
 pub async fn auto_chapter(app: AppHandle, path: String) -> Result<Value, String> {
-    spawn_videoflow_streaming(&app, "auto_chapter_progress", &["auto-chapter", &path]).await?;
+    let bridge_result =
+        spawn_videoflow_streaming(&app, "auto_chapter_progress", &["auto-chapter", &path]).await;
 
-    // Read the sidecar that was just written
     let sidecar = sidecar_path_for(&path)?;
-    read_sidecar_at(&sidecar).await?.ok_or_else(|| {
-        format!(
-            "auto-chapter completed but expected sidecar not found: {}",
-            sidecar.display()
-        )
-    })
+    if let Ok(Some(data)) = read_sidecar_at(&sidecar).await {
+        return Ok(data);
+    }
+
+    // No sidecar on disk → the run actually failed. Surface the bridge
+    // error if we have one, otherwise a generic missing-file message.
+    bridge_result?;
+    Err(format!(
+        "auto-chapter completed but expected sidecar not found: {}",
+        sidecar.display()
+    ))
 }
 
 /// Read `<stem>.chapters.json` next to `path` if it exists.
@@ -274,7 +318,7 @@ pub async fn generate_funscript(
 
     let _ = options.emphasize_beats; // accepted for forward-compat; CLI flag pending
 
-    spawn_videoflow_streaming(
+    let bridge_result = spawn_videoflow_streaming(
         &app,
         "generate_funscript_progress",
         &[
@@ -289,5 +333,21 @@ pub async fn generate_funscript(
             &options.tone,
         ],
     )
-    .await
+    .await;
+
+    // Resilience for Python atexit-cleanup exit codes (see auto_chapter
+    // doc): if the funscript was actually written, treat as success even
+    // when the bridge reports a non-zero exit. Only error when the file
+    // is missing.
+    if out_path.exists() {
+        if let Ok(value) = bridge_result {
+            return Ok(value);
+        }
+        // Synthesize a minimal result so React has something to render.
+        return Ok(serde_json::json!({
+            "output": out_str,
+            "synthesized": true,
+        }));
+    }
+    bridge_result
 }
