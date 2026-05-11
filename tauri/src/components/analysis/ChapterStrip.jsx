@@ -2,24 +2,38 @@
 // drop Style/Tone labels, show contentType only. Per decision #5:
 // dim low-confidence chapters as the Confidence overlay (in lieu of a
 // standalone Confidence card in forgegen).
+//
+// Long-file polish: switched from proportional flex (which crushed labels
+// to "Mu…" on 50+ chapter files) to fixed-width chips with horizontal
+// scroll. The chip strip is for "click into a chapter" — actual time
+// proportions live in MainTimeline below where they belong.
 
 import {
   chapterColor,
-  chapterDurationMs,
   contentTypeLabel,
   totalDurationMs,
   LOW_CONFIDENCE_THRESHOLD,
 } from '../../lib/analysis.js';
+
+const CHIP_MIN_WIDTH = 130;
 
 export default function ChapterStrip({ sidecar, focusedIdx, onFocus }) {
   const total = totalDurationMs(sidecar);
   if (!total) return null;
 
   return (
-    <div style={{ display: 'flex', gap: 6, alignItems: 'stretch', flex: 1, minWidth: 0 }}>
+    <div
+      style={{
+        display: 'flex',
+        gap: 6,
+        alignItems: 'stretch',
+        flex: 1,
+        minWidth: 0,
+        overflowX: 'auto',
+        paddingBottom: 4,
+      }}
+    >
       {sidecar.chapters.map((c, i) => {
-        const dur = chapterDurationMs(c);
-        const flex = dur / total;
         const focused = i === focusedIdx;
         const color = chapterColor(c);
         const lowConf = c.confidence < LOW_CONFIDENCE_THRESHOLD;
@@ -35,7 +49,8 @@ export default function ChapterStrip({ sidecar, focusedIdx, onFocus }) {
               (lowConf ? '\n⚠ low confidence — would benefit from FFP review' : '')
             }
             style={{
-              flex,
+              flex: '0 0 auto',
+              minWidth: CHIP_MIN_WIDTH,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -51,7 +66,6 @@ export default function ChapterStrip({ sidecar, focusedIdx, onFocus }) {
               fontFamily: 'inherit',
               textAlign: 'left',
               cursor: 'pointer',
-              minWidth: 0,
               overflow: 'hidden',
               transition: 'opacity 120ms, background 120ms',
             }}

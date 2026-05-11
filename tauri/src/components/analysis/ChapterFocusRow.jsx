@@ -167,39 +167,45 @@ function ChapterPhraseDetail({ sidecar, chapterIdx }) {
           color="#5b6cff"
           showDownbeats
         />
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', padding: '6px 0' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', padding: '6px 0', minWidth: 0 }}>
           {phs.map((p, i) => {
             const flex = (p.end_ms - p.at_ms) / dur;
             const c2 = modeColor(p.mode);
+            // Skip the P# overlay label when the phrase block is too narrow
+            // for the chip to be legible (chapters with hundreds of phrases).
+            const showLabel = flex >= 0.015 && phs.length <= 60;
             return (
               <div
                 key={i}
                 title={`P${i + 1} · ${modeLabel(p.mode)}`}
                 style={{
                   flex,
-                  margin: '0 2px',
+                  minWidth: 0,
+                  margin: showLabel ? '0 2px' : '0 0.5px',
                   border: `1.5px solid ${c2}`,
-                  borderRadius: 4,
+                  borderRadius: showLabel ? 4 : 0,
                   position: 'relative',
                   background: `color-mix(in srgb, ${c2} 10%, transparent)`,
                 }}
               >
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: -1,
-                    left: 4,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    fontFamily: 'ui-monospace, "Cascadia Code", Consolas, monospace',
-                    color: c2,
-                    background: 'var(--bg-elevated)',
-                    padding: '0 4px',
-                    borderRadius: 2,
-                  }}
-                >
-                  P{i + 1}
-                </span>
+                {showLabel && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -1,
+                      left: 4,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      fontFamily: 'ui-monospace, "Cascadia Code", Consolas, monospace',
+                      color: c2,
+                      background: 'var(--bg-elevated)',
+                      padding: '0 4px',
+                      borderRadius: 2,
+                    }}
+                  >
+                    P{i + 1}
+                  </span>
+                )}
               </div>
             );
           })}

@@ -44,6 +44,9 @@ function ProvenanceFooter({ sidecar }) {
 
 function MainTimeline({ sidecar, focusedIdx, onFocus }) {
   const total = totalDurationMs(sidecar);
+  // Below this fraction of total, the ribbon segment is too narrow for a
+  // legible label — drop the text but keep the colored block + tooltip.
+  const NAME_VISIBILITY_THRESHOLD = 0.04;
   return (
     <div
       style={{
@@ -51,6 +54,7 @@ function MainTimeline({ sidecar, focusedIdx, onFocus }) {
         border: '1px solid var(--border)',
         borderRadius: 8,
         padding: 6,
+        overflow: 'hidden',
       }}
     >
       <div style={{ background: 'var(--bg)', padding: 4, borderRadius: 4 }}>
@@ -61,17 +65,21 @@ function MainTimeline({ sidecar, focusedIdx, onFocus }) {
           showDownbeats
         />
       </div>
-      {/* Chapter ribbon below bars */}
-      <div style={{ display: 'flex', height: 22, gap: 0, marginTop: 4 }}>
+      {/* Chapter ribbon below bars — proportional to time, labels drop on narrow segments */}
+      <div style={{ display: 'flex', height: 22, gap: 0, marginTop: 4, minWidth: 0 }}>
         {sidecar.chapters.map((c, i) => {
           const flex = chapterDurationMs(c) / total;
           const focused = i === focusedIdx;
+          const showLabel = flex >= NAME_VISIBILITY_THRESHOLD;
+          const label = c.name || `Chapter ${i + 1}`;
           return (
             <div
               key={i}
               onClick={() => onFocus(i)}
+              title={label}
               style={{
                 flex,
+                minWidth: 0,
                 background: focused
                   ? chapterColor(c)
                   : `color-mix(in srgb, ${chapterColor(c)} 65%, transparent)`,
@@ -87,7 +95,7 @@ function MainTimeline({ sidecar, focusedIdx, onFocus }) {
                 overflow: 'hidden',
               }}
             >
-              {c.name || `Chapter ${i + 1}`}
+              {showLabel ? label : ''}
             </div>
           );
         })}

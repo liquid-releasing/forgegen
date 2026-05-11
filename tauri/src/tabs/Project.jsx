@@ -13,9 +13,17 @@
 //
 // v0.3 (TODO): recents list, device selection (FFP-only gates Stim/Multiaxis).
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { autoChapter, isTauri, pickAudioFile, readSidecar } from '../api/videoflow.js';
 import { fmtTime, totalDurationMs } from '../lib/analysis.js';
+
+/** Format an elapsed-second count for the busy-state label. */
+function fmtElapsed(s) {
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}m ${String(r).padStart(2, '0')}s`;
+}
 
 const PHASES = {
   IDLE: 'idle',
@@ -31,6 +39,27 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
   const [path, setPath] = useState(null);
   const [error, setError] = useState(null);
   const [reusedSidecar, setReusedSidecar] = useState(false);
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const intervalRef = useRef(null);
+
+  // Tick an elapsed-time counter while we're in CHECKING/ANALYZING phases
+  // so the user has feedback during multi-minute runs on long files.
+  useEffect(() => {
+    const isWorking = phase === PHASES.CHECKING || phase === PHASES.ANALYZING;
+    if (isWorking) {
+      const startedAt = Date.now();
+      setElapsedSec(0);
+      intervalRef.current = setInterval(() => {
+        setElapsedSec(Math.floor((Date.now() - startedAt) / 1000));
+      }, 1000);
+    }
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [phase]);
 
   async function handlePick() {
     setError(null);
@@ -67,11 +96,21 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
   }
 
   const busy = phase === PHASES.PICKING || phase === PHASES.CHECKING || phase === PHASES.ANALYZING;
-  const busyLabel = {
+  const baseLabel = {
     picking: 'Choose a file…',
     checking: 'Checking for existing sidecar…',
-    analyzing: 'Running videoflow auto-chapter… (~5–60s for music files)',
+    analyzing:
+      elapsedSec < 60
+        ? 'Running videoflow auto-chapter… short tracks finish in 5–60s'
+        : elapsedSec < 600
+        ? 'Running videoflow auto-chapter… long tracks (1–10 min for full albums)'
+        : 'Running videoflow auto-chapter… very long file (multi-hour can take 10+ min)',
   }[phase];
+  const busyLabel = baseLabel
+    ? phase === PHASES.PICKING
+      ? baseLabel
+      : `${baseLabel} · ${fmtElapsed(elapsedSec)}`
+    : '';
 
   return (
     <section className="tab-panel">
