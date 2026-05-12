@@ -19,16 +19,10 @@ jobs:
         include:
           - platform: windows-latest
             os_name: windows
-            bundle_glob: tauri/src-tauri/target/release/bundle/msi/*.msi
-            extra_glob: tauri/src-tauri/target/release/bundle/nsis/*.exe
           - platform: macos-latest
             os_name: macos
-            bundle_glob: tauri/src-tauri/target/release/bundle/dmg/*.dmg
-            extra_glob: ""
           - platform: ubuntu-latest
             os_name: linux
-            bundle_glob: tauri/src-tauri/target/release/bundle/appimage/*.AppImage
-            extra_glob: tauri/src-tauri/target/release/bundle/deb/*.deb
 
     name: Build — ${{ matrix.os_name }}
     runs-on: ${{ matrix.platform }}
@@ -71,14 +65,41 @@ jobs:
         working-directory: tauri
         run: npm run tauri:build
 
+      # Tauri's bundle naming includes the version (forgegen_0.2.1_x64_en-US.msi)
+      # which makes "latest" download URLs unstable across releases. Rename
+      # everything into a flat dist-stable/ dir with predictable names so
+      # forgegen.app's <a href="releases/latest/download/ForgeGen-Setup-..."
+      # links keep working tag-to-tag.
+      - name: Rename to stable filenames (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          mkdir -p dist-stable
+          cp tauri/src-tauri/target/release/bundle/msi/*.msi  dist-stable/ForgeGen-Setup-windows.msi
+          cp tauri/src-tauri/target/release/bundle/nsis/*.exe dist-stable/ForgeGen-Setup-windows.exe
+
+      - name: Rename to stable filenames (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          mkdir -p dist-stable
+          # macos-latest is Apple Silicon — the build is aarch64 only.
+          # Suffix kept in the name so a future Intel matrix entry doesn't
+          # collide on upload.
+          cp tauri/src-tauri/target/release/bundle/dmg/*.dmg dist-stable/ForgeGen-Setup-macos-aarch64.dmg
+
+      - name: Rename to stable filenames (Linux)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          mkdir -p dist-stable
+          cp tauri/src-tauri/target/release/bundle/appimage/*.AppImage dist-stable/ForgeGen-Setup-linux.AppImage
+          cp tauri/src-tauri/target/release/bundle/deb/*.deb           dist-stable/ForgeGen-Setup-linux.deb
+
       - name: Upload bundles
         uses: actions/upload-artifact@v4
         with:
           name: forgegen-${{ matrix.os_name }}
           if-no-files-found: error
-          path: |
-            ${{ matrix.bundle_glob }}
-            ${{ matrix.extra_glob }}
+          path: dist-stable/*
 
   # ---------------------------------------------------------------------------
   # Attach all artifacts to a release in liquid-releasing/forgegen-releases
@@ -115,12 +136,15 @@ jobs:
           prerelease: false
           generate_release_notes: true
           append_body: true
+          # actions/upload-artifact@v4 strips the artifact name prefix from
+          # the path, so the renamed files land flat under their named dir
+          # (e.g. artifacts/forgegen-windows/ForgeGen-Setup-windows.msi).
           files: |
-            artifacts/forgegen-windows/*.msi
-            artifacts/forgegen-windows/*.exe
-            artifacts/forgegen-macos/*.dmg
-            artifacts/forgegen-linux/*.AppImage
-            artifacts/forgegen-linux/*.deb
+            artifacts/forgegen-windows/ForgeGen-Setup-windows.msi
+            artifacts/forgegen-windows/ForgeGen-Setup-windows.exe
+            artifacts/forgegen-macos/ForgeGen-Setup-macos-aarch64.dmg
+            artifacts/forgegen-linux/ForgeGen-Setup-linux.AppImage
+            artifacts/forgegen-linux/ForgeGen-Setup-linux.deb
           body: |
             forgegen — generate funscripts from audio in seconds. Local
             desktop app, no cloud.
