@@ -309,7 +309,7 @@ function buildMockSidecar() {
     provenance: [
       {
         writer: 'videoflow.structural',
-        version: '0.0.5-alpha',
+        version: '0.0.6-alpha',
         timestamp: '2026-05-11T14:22:11Z',
         fields: ['chapters', 'phrases', 'energy'],
       },

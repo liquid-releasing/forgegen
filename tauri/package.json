@@ -1,6 +1,6 @@
 {
   "name": "forgegen-tauri",
-  "version": "0.1.0",
+  "version": "0.2.0-mvp2",
   "description": "forgegen — easy-button funscript/haptics generator (Tauri + React rewrite)",
   "private": true,
   "type": "module",
