@@ -6,11 +6,48 @@
 // demands sub-100ms latency.
 
 use serde_json::Value;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use tauri::{AppHandle, Emitter};
+use std::sync::Mutex;
+use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
+use tokio::sync::oneshot;
+
+// ---------------------------------------------------------------------------
+// Cancel registry — lets the UI abort an in-flight videoflow run
+// ---------------------------------------------------------------------------
+//
+// Keyed by the same event_name the spawn function uses for streaming progress
+// (`auto_chapter_progress`, `generate_funscript_progress`). When the frontend
+// calls `cancel_run(event_name)`, we look up the oneshot sender, fire it,
+// and the spawn task aborts: it kills the child process and returns an error
+// the UI recognises as a user cancel rather than a real failure.
+//
+// Single-run-per-event semantics: spawning a new run with the same event
+// replaces (and effectively cancels) any prior sender for that event.
+
+pub struct CancelRegistry(pub Mutex<HashMap<String, oneshot::Sender<()>>>);
+
+impl CancelRegistry {
+    pub fn new() -> Self {
+        Self(Mutex::new(HashMap::new()))
+    }
+}
+
+#[tauri::command]
+pub fn cancel_run(state: State<'_, CancelRegistry>, event_name: String) -> Result<(), String> {
+    let sender = state
+        .0
+        .lock()
+        .map_err(|e| format!("cancel_run lock: {}", e))?
+        .remove(&event_name);
+    if let Some(tx) = sender {
+        let _ = tx.send(());
+    }
+    Ok(())
+}
 
 // ---------------------------------------------------------------------------
 // videoflow binary lookup
@@ -172,6 +209,16 @@ async fn spawn_videoflow_streaming(
     // opens it in append mode so this just resets length to 0.
     tokio::fs::write(&progress_file, b"").await.ok();
 
+    // Register a cancel channel under the streaming event name. The UI's
+    // cancel_run command fires the sender; we select between it and
+    // child.wait() below, killing the child if cancel wins.
+    let (cancel_tx, mut cancel_rx) = oneshot::channel::<()>();
+    if let Some(state) = app.try_state::<CancelRegistry>() {
+        if let Ok(mut map) = state.0.lock() {
+            map.insert(event_name.to_string(), cancel_tx);
+        }
+    }
+
     let mut child = Command::new(&bin)
         .args(&full_args)
         .env("VIDEOFLOW_PROGRESS_FILE", &progress_file)
@@ -246,10 +293,34 @@ async fn spawn_videoflow_streaming(
         ).await;
     });
 
-    let status = child
-        .wait()
-        .await
-        .map_err(|e| format!("wait videoflow failed: {}", e))?;
+    // Race: child finishes naturally vs. user clicks Cancel. On cancel we
+    // kill the child (SIGKILL on unix, TerminateProcess on Windows), drain
+    // the same downstream tasks the natural-exit path uses, and surface a
+    // sentinel error string the React side recognises as a user cancel
+    // (handlePick checks for "cancelled" and falls back to IDLE silently).
+    let cancelled;
+    let status = tokio::select! {
+        s = child.wait() => {
+            cancelled = false;
+            s.map_err(|e| format!("wait videoflow failed: {}", e))?
+        }
+        _ = &mut cancel_rx => {
+            cancelled = true;
+            let _ = child.kill().await;
+            // Reap so we don't leak a zombie. Any wait error here is moot —
+            // we already know the run is dead.
+            child.wait().await.ok();
+            std::process::ExitStatus::default()
+        }
+    };
+
+    // Always drop the registry entry on exit so a stale sender can't fire on
+    // a future run that reuses the same event_name.
+    if let Some(state) = app.try_state::<CancelRegistry>() {
+        if let Ok(mut map) = state.0.lock() {
+            map.remove(event_name);
+        }
+    }
 
     let _ = shutdown_tx.send(());
     let _ = poll_task.await;
@@ -258,6 +329,10 @@ async fn spawn_videoflow_streaming(
     let stdout_bytes = stdout_task.await.unwrap_or_default();
 
     let _ = tokio::fs::remove_file(&progress_file).await;
+
+    if cancelled {
+        return Err("cancelled".to_string());
+    }
 
     if !status.success() {
         return Err(format!(
@@ -352,6 +427,13 @@ pub async fn auto_chapter(app: AppHandle, path: String) -> Result<Value, String>
     let bridge_result =
         spawn_videoflow_streaming(&app, "auto_chapter_progress", &["auto-chapter", &path]).await;
 
+    // User cancel beats the resilience check: an existing sidecar from a
+    // previous run is not the right answer here, and we don't want a partial
+    // sidecar from this run leaking through either.
+    if matches!(&bridge_result, Err(e) if e == "cancelled") {
+        return Err("cancelled".to_string());
+    }
+
     let sidecar = sidecar_path_for(&path)?;
     if let Ok(Some(data)) = read_sidecar_at(&sidecar).await {
         return Ok(data);
@@ -379,10 +461,19 @@ pub async fn read_sidecar(path: String) -> Result<Option<Value>, String> {
 // generate_funscript
 // ---------------------------------------------------------------------------
 
-/// Per-track funscript generation options. v0.1 uses a single recipe across
-/// the whole track (the per-chapter authoring form sends row 1's values for
-/// now). Per-chapter recipe support requires a videoflow CLI extension —
-/// tracked in `forgegen/REFACTOR_TO_TAURI_REACT.md` v0.2 milestone.
+/// Per-track funscript generation options.
+///
+/// Single-recipe path (default): `source` / `density` / `tone` /
+/// `emphasize_beats` apply to the whole track and the bridge passes them
+/// as videoflow CLI flags. Used when `chapters` + `recipes` are absent.
+///
+/// Per-chapter path: when `chapters` and `recipes` are both present (and
+/// the same length), the bridge writes a recipe-bundle JSON to a temp file
+/// and passes `--recipe-bundle <path>` instead. videoflow loops chapters
+/// with each row's stroke-density + tone (source stays global per run).
+/// The funscript metadata embeds a `generated_from` block with full
+/// provenance — chapters used, recipes applied, source partial-MD5 — so
+/// downstream tools can detect drift if the source video is later edited.
 #[derive(serde::Deserialize)]
 pub struct GenerateOptions {
     /// `--source`: "full" or "percussive"
@@ -391,14 +482,85 @@ pub struct GenerateOptions {
     pub density: String,
     /// `--tone`: "flat" | "rise" | "fall" | "auto"
     pub tone: String,
-    /// UI-only for v0.1 (videoflow doesn't yet boost downbeats from this flag).
-    /// Kept on the wire so the CLI extension lands non-breaking later.
+    /// UI-only for the single-recipe path; the per-chapter path emits this
+    /// per row in the bundle JSON.
+    #[serde(default)]
+    pub emphasize_beats: bool,
+    /// Optional per-chapter authoring grid. Every entry corresponds 1:1
+    /// with `chapters[i]`; videoflow rejects a count mismatch.
+    #[serde(default)]
+    pub recipes: Option<Vec<RecipeRow>>,
+    /// Chapter time-windows for the per-chapter path. From the sidecar's
+    /// `chapters[i].at_ms` / `end_ms` (or `null` for the trailing chapter).
+    #[serde(default)]
+    pub chapters: Option<Vec<ChapterBound>>,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Clone)]
+pub struct RecipeRow {
+    pub source: String,
+    pub stroke_density: String,
+    pub tone: String,
     #[serde(default)]
     pub emphasize_beats: bool,
 }
 
-/// Run `videoflow generate-funscript <input> <output> --source ... --tone ... --stroke-density ...`
-/// and return the parsed JSON result. Output path defaults to `<stem>.funscript`
+#[derive(serde::Deserialize, serde::Serialize, Clone)]
+pub struct ChapterBound {
+    pub at_ms: u64,
+    /// `None` means "to end of track" — videoflow substitutes the
+    /// beat-map's duration_ms.
+    #[serde(default)]
+    pub end_ms: Option<u64>,
+}
+
+/// Compute the partial-MD5 of `path` — first 64KB + middle 64KB + last 64KB,
+/// hashed together with their offsets. Cheap on multi-GB media, stable across
+/// re-encodes-of-the-same-bytes, and good enough for the drift-detection use
+/// in the funscript's `generated_from.source` block. Returns hex.
+fn partial_md5(path: &Path) -> Result<String, String> {
+    use md5::{Digest, Md5};
+    use std::io::{Read, Seek, SeekFrom};
+    const CHUNK: usize = 64 * 1024;
+    let mut file = std::fs::File::open(path)
+        .map_err(|e| format!("partial_md5 open {}: {}", path.display(), e))?;
+    let len = file
+        .metadata()
+        .map_err(|e| format!("partial_md5 metadata: {}", e))?
+        .len();
+    let mut hasher = Md5::new();
+    // Mix the file size in so two files with the same head/middle/tail but
+    // different lengths don't collide.
+    hasher.update(len.to_le_bytes());
+    let mut buf = vec![0u8; CHUNK];
+    let read_at = |file: &mut std::fs::File, off: u64, buf: &mut Vec<u8>| -> Result<usize, String> {
+        file.seek(SeekFrom::Start(off))
+            .map_err(|e| format!("partial_md5 seek: {}", e))?;
+        let n = file
+            .read(buf)
+            .map_err(|e| format!("partial_md5 read: {}", e))?;
+        Ok(n)
+    };
+    let n = read_at(&mut file, 0, &mut buf)?;
+    hasher.update(&buf[..n]);
+    if len > (CHUNK as u64) * 2 {
+        let mid = len / 2 - (CHUNK as u64) / 2;
+        let n = read_at(&mut file, mid, &mut buf)?;
+        hasher.update(&buf[..n]);
+    }
+    if len > CHUNK as u64 {
+        let tail = len.saturating_sub(CHUNK as u64);
+        let n = read_at(&mut file, tail, &mut buf)?;
+        hasher.update(&buf[..n]);
+    }
+    let digest = hasher.finalize();
+    Ok(digest.iter().map(|b| format!("{:02x}", b)).collect())
+}
+
+/// Run `videoflow generate-funscript <input> <output>` with either single-
+/// recipe args (`--source`, `--stroke-density`, `--tone`) or, when the
+/// caller supplies `chapters` + `recipes`, with `--recipe-bundle <temp.json>`
+/// for per-chapter synthesis. Output path defaults to `<stem>.funscript`
 /// next to the media file. Per-stage progress streams via the
 /// `generate_funscript_progress` Tauri event so the React UI can render
 /// the same Stepper used for auto-chapter.
@@ -420,24 +582,99 @@ pub async fn generate_funscript(
     let out_path = parent.join(format!("{}.funscript", stem));
     let out_str = out_path.to_string_lossy().to_string();
 
-    let _ = options.emphasize_beats; // accepted for forward-compat; CLI flag pending
+    // Don't silently overwrite a previous funscript — rename it with a
+    // local-time timestamp so iterating on settings never destroys earlier
+    // generations. The canonical <stem>.funscript stays the latest so player
+    // auto-pairing keeps working.
+    if out_path.exists() {
+        let ts = chrono::Local::now().format("%Y-%m-%dT%H-%M-%S");
+        let backup = parent.join(format!("{}.funscript.{}.bak", stem, ts));
+        if let Err(e) = tokio::fs::rename(&out_path, &backup).await {
+            return Err(format!(
+                "failed to back up existing funscript {} → {}: {}",
+                out_path.display(),
+                backup.display(),
+                e
+            ));
+        }
+    }
+
+    let _ = options.emphasize_beats; // accepted for forward-compat; bundle path emits per row
+
+    // Per-chapter path: build the recipe-bundle JSON, write to a unique
+    // temp file, pass via --recipe-bundle. Cleanup the file after the run
+    // regardless of outcome (success, error, cancel). Single-recipe path
+    // is the legacy fallback when chapters/recipes aren't supplied.
+    let bundle_temp: Option<PathBuf> = if let (Some(chapters), Some(recipes)) =
+        (options.chapters.as_ref(), options.recipes.as_ref())
+    {
+        if chapters.len() != recipes.len() {
+            return Err(format!(
+                "recipe-bundle length mismatch: {} chapters vs {} recipes",
+                chapters.len(),
+                recipes.len()
+            ));
+        }
+        // Source provenance for the funscript metadata. partial_md5 lets
+        // FunscriptForge / ForgePlayer detect drift if the source video
+        // gets re-edited; size_bytes is a cheap second-line check.
+        let (size_bytes, partial) = match std::fs::metadata(p) {
+            Ok(m) => (Some(m.len()), partial_md5(p).ok()),
+            Err(_) => (None, None),
+        };
+        let bundle = serde_json::json!({
+            "version": 1,
+            "chapters": chapters,
+            "recipes": recipes,
+            "source": {
+                "path": &path,
+                "size_bytes": size_bytes,
+                "partial_md5": partial,
+            },
+        });
+        let tmp = std::env::temp_dir().join(format!(
+            "forgegen_bundle_{}_{}.json",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0)
+        ));
+        tokio::fs::write(&tmp, serde_json::to_vec_pretty(&bundle).unwrap_or_default())
+            .await
+            .map_err(|e| format!("write recipe-bundle {}: {}", tmp.display(), e))?;
+        Some(tmp)
+    } else {
+        None
+    };
+
+    let bundle_str_opt = bundle_temp.as_ref().map(|p| p.to_string_lossy().to_string());
+    let mut args: Vec<&str> = vec!["generate-funscript", &path, &out_str];
+    if let Some(ref bundle_path) = bundle_str_opt {
+        args.extend_from_slice(&["--recipe-bundle", bundle_path]);
+    } else {
+        args.extend_from_slice(&[
+            "--source", &options.source,
+            "--stroke-density", &options.density,
+            "--tone", &options.tone,
+        ]);
+    }
 
     let bridge_result = spawn_videoflow_streaming(
         &app,
         "generate_funscript_progress",
-        &[
-            "generate-funscript",
-            &path,
-            &out_str,
-            "--source",
-            &options.source,
-            "--stroke-density",
-            &options.density,
-            "--tone",
-            &options.tone,
-        ],
+        &args,
     )
     .await;
+
+    if let Some(tmp) = bundle_temp {
+        let _ = tokio::fs::remove_file(&tmp).await;
+    }
+
+    // User cancel beats resilience — see auto_chapter doc.
+    if matches!(&bridge_result, Err(e) if e == "cancelled") {
+        return Err("cancelled".to_string());
+    }
 
     // Resilience for Python atexit-cleanup exit codes (see auto_chapter
     // doc): if the funscript was actually written, treat as success even
@@ -454,4 +691,114 @@ pub async fn generate_funscript(
         }));
     }
     bridge_result
+}
+
+// ---------------------------------------------------------------------------
+// Recents — most-recently-used file list
+// ---------------------------------------------------------------------------
+//
+// Persists up to MAX_RECENTS file paths in <appDataDir>/recents.json so the
+// Project tab can offer one-click reload of recent media. Path is the only
+// natural identity (we don't store sidecar contents). `added_at` is unix
+// seconds — JS converts via `new Date(added_at * 1000)`.
+
+const MAX_RECENTS: usize = 8;
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct RecentItem {
+    pub path: String,
+    pub added_at: u64,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct RecentsFile {
+    version: u32,
+    items: Vec<RecentItem>,
+}
+
+/// Same as RecentItem but augmented with a freshly-checked `exists` flag so
+/// the UI can render missing files as greyed-out without doing its own
+/// filesystem probe round-trip.
+#[derive(serde::Serialize)]
+pub struct RecentItemWithExists {
+    pub path: String,
+    pub added_at: u64,
+    pub exists: bool,
+}
+
+fn recents_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("app_data_dir: {}", e))?;
+    std::fs::create_dir_all(&dir).map_err(|e| format!("create_dir {}: {}", dir.display(), e))?;
+    Ok(dir.join("recents.json"))
+}
+
+fn now_unix() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+async fn load_recents(path: &Path) -> Vec<RecentItem> {
+    if !path.exists() {
+        return Vec::new();
+    }
+    let Ok(txt) = tokio::fs::read_to_string(path).await else {
+        return Vec::new();
+    };
+    serde_json::from_str::<RecentsFile>(&txt)
+        .map(|d| d.items)
+        .unwrap_or_default()
+}
+
+async fn save_recents(path: &Path, items: Vec<RecentItem>) -> Result<(), String> {
+    let data = RecentsFile { version: 1, items };
+    let txt = serde_json::to_string_pretty(&data)
+        .map_err(|e| format!("serialize recents: {}", e))?;
+    tokio::fs::write(path, txt)
+        .await
+        .map_err(|e| format!("write {}: {}", path.display(), e))
+}
+
+#[tauri::command]
+pub async fn read_recents(app: AppHandle) -> Result<Vec<RecentItemWithExists>, String> {
+    let path = recents_path(&app)?;
+    let items = load_recents(&path).await;
+    Ok(items
+        .into_iter()
+        .map(|i| RecentItemWithExists {
+            exists: Path::new(&i.path).exists(),
+            path: i.path,
+            added_at: i.added_at,
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub async fn add_recent(app: AppHandle, path: String) -> Result<(), String> {
+    let recents = recents_path(&app)?;
+    let mut items = load_recents(&recents).await;
+    // Dedup by path then prepend the new entry — keeps the newest at index 0
+    // and bumps a re-opened file back to the top.
+    items.retain(|i| i.path != path);
+    items.insert(
+        0,
+        RecentItem {
+            path,
+            added_at: now_unix(),
+        },
+    );
+    items.truncate(MAX_RECENTS);
+    save_recents(&recents, items).await
+}
+
+#[tauri::command]
+pub async fn remove_recent(app: AppHandle, path: String) -> Result<(), String> {
+    let recents = recents_path(&app)?;
+    let items = load_recents(&recents).await;
+    let filtered: Vec<RecentItem> = items.into_iter().filter(|i| i.path != path).collect();
+    save_recents(&recents, filtered).await
 }

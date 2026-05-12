@@ -4,6 +4,7 @@ mod commands;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .manage(commands::CancelRegistry::new())
         .setup(|_app| {
             // Auto-open devtools on debug builds so the console is always
             // visible during dev. WebView2's F12 binding is unreliable; this
@@ -23,6 +24,10 @@ pub fn run() {
             commands::auto_chapter,
             commands::read_sidecar,
             commands::generate_funscript,
+            commands::read_recents,
+            commands::add_recent,
+            commands::remove_recent,
+            commands::cancel_run,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

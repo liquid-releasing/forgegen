@@ -59,6 +59,40 @@ export async function readSidecar(path) {
   return invokeOrMock('read_sidecar', { path }, () => mockReadSidecar(path));
 }
 
+/** Abort an in-flight streaming run keyed by its event name. The bridge
+ * kills the python child and returns the sentinel error string "cancelled"
+ * to the original autoChapter / generateFunscript caller. Browser mode is
+ * a no-op (mocks finish on their own timer). */
+export async function cancelRun(eventName) {
+  if (!isTauri()) return;
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke('cancel_run', { eventName });
+}
+
+/** Convenience: cancel the currently-running auto-chapter, if any. */
+export function cancelAutoChapter() {
+  return cancelRun('auto_chapter_progress');
+}
+
+/** Convenience: cancel the currently-running generate-funscript, if any. */
+export function cancelGenerateFunscript() {
+  return cancelRun('generate_funscript_progress');
+}
+
+/** Sentinel string the bridge returns when a run was cancelled by the user.
+ * Callers compare against this to distinguish a clean cancel from a real
+ * failure (e.g. don't show as an error, just return to idle). */
+export const CANCELLED_ERROR = 'cancelled';
+
+/** True if `err` (string or Error) was a user cancel. Uses `includes` rather
+ * than strict equality because Tauri sometimes wraps the rejection value in a
+ * sentence like "TauriError: cancelled" depending on how the binding stringifies. */
+export function isCancelled(err) {
+  if (!err) return false;
+  const msg = typeof err === 'string' ? err : (err.message ?? String(err));
+  return msg.includes(CANCELLED_ERROR);
+}
+
 /** Generate a funscript from `path` using the supplied options. Optional
  * `onProgress(stageLabel)` is invoked for each per-stage progress line
  * streamed from videoflow's stderr (e.g. "Loading audio (librosa)…",

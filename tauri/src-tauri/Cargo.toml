@@ -22,6 +22,8 @@ tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["process", "io-util", "macros", "rt-multi-thread", "fs", "time", "sync"] }
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+md-5 = "0.10"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

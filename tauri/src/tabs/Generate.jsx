@@ -14,7 +14,7 @@
 // The form captures the per-chapter intent so v0.2 just unlocks the
 // backend without touching this UI.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ChapterStrip from '../components/analysis/ChapterStrip.jsx';
 import PerChapterForm, {
   DEFAULT_RECIPE,
@@ -223,23 +223,25 @@ const selectStyle = {
   cursor: 'pointer',
 };
 
-function v01Caveat({ count }) {
+function PerChapterCaveat({ count }) {
   return (
     <div
       style={{
         padding: '10px 14px',
-        background: 'rgba(255, 181, 71, 0.08)',
-        border: '1px solid rgba(255, 181, 71, 0.3)',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border)',
         borderRadius: 6,
         fontSize: 12,
-        color: 'var(--fg)',
+        color: 'var(--muted)',
         lineHeight: 1.5,
       }}
     >
-      <strong style={{ color: 'var(--warning)' }}>v0.1:</strong>{' '}
-      videoflow's CLI doesn't yet accept per-chapter recipes, so generation
-      uses chapter 1's row for the full {count}-chapter track. Per-chapter
-      synthesis lands in v0.2 (CLI extension + recipe bundle).
+      Each of the {count} chapters synthesizes with its own Density / Shape
+      via videoflow's <code>--recipe-bundle</code>. Source mix
+      (percussive vs full) is shared across the whole run because the audio
+      is loaded once at analyze time. The funscript metadata embeds the
+      chapters + recipes used + a partial-MD5 of the source video so
+      downstream tools can detect drift if you re-edit the source later.
     </div>
   );
 }
@@ -326,16 +328,40 @@ export default function Generate({ sidecar, mediaPath }) {
   const [error, setError] = useState(null);
   const [stage, setStage] = useState(null);
   const [stageId, setStageId] = useState(null);
+  // Ref on the busy/result block — when generation kicks off we
+  // scrollIntoView so the progress bar is visible without manual scroll.
+  // The author UI (chapter rows + bulk controls) easily exceeds one
+  // screen on tracks with many chapters, so the progress block sits below
+  // the fold by default.
+  const progressRef = useRef(null);
 
+  // Both single-recipe args (back-compat for callers without a chapter
+  // grid) and the per-chapter recipe-bundle. The bridge takes the bundle
+  // path when chapters + recipes are both present and lengths match;
+  // otherwise it falls back to the single-recipe CLI flags. Sending both
+  // costs nothing — videoflow ignores --source/--stroke-density/--tone
+  // when --recipe-bundle is set.
   const sendOptions = useMemo(() => {
-    const r = recipes[0] || DEFAULT_RECIPE;
-    return {
+    const head = recipes[0] || DEFAULT_RECIPE;
+    const chapterBounds = (sidecar?.chapters || []).map((c) => ({
+      at_ms: c.at_ms,
+      end_ms: c.end_ms ?? null,
+    }));
+    const recipeRows = recipes.map((r) => ({
       source: r.style,
-      density: r.density,
+      stroke_density: r.density,
       tone: r.shape,
       emphasize_beats: !!r.emphasize_beats,
+    }));
+    return {
+      source: head.style,
+      density: head.density,
+      tone: head.shape,
+      emphasize_beats: !!head.emphasize_beats,
+      chapters: chapterBounds,
+      recipes: recipeRows,
     };
-  }, [recipes]);
+  }, [recipes, sidecar]);
 
   if (!sidecar) return <NoSidecarHint />;
   if (!mediaPath) return <NoMediaPathHint />;
@@ -380,6 +406,17 @@ export default function Generate({ sidecar, mediaPath }) {
   }
 
   const busy = phase === PHASES.GENERATING;
+
+  // Auto-scroll the progress block into view when generation kicks off.
+  // The author UI (chapter rows + bulk controls) frequently exceeds one
+  // screen of vertical space, so the progress block sits below the fold.
+  // Scrolling on the busy → true edge gives the user immediate feedback
+  // that the run started without making them hunt for the bar.
+  useEffect(() => {
+    if (busy && progressRef.current) {
+      progressRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [busy]);
 
   return (
     <section className="tab-panel" style={{ padding: 0, border: 'none', background: 'transparent' }}>
@@ -448,7 +485,7 @@ export default function Generate({ sidecar, mediaPath }) {
         </div>
 
         {/* 5. v0.1 caveat */}
-        {v01Caveat({ count: sidecar.chapters.length })}
+        {PerChapterCaveat({ count: sidecar.chapters.length })}
 
         {/* 6. Generate CTA + status */}
         <div
@@ -489,6 +526,7 @@ export default function Generate({ sidecar, mediaPath }) {
         {/* 7. Status / error / result */}
         {busy && (
           <div
+            ref={progressRef}
             style={{
               padding: 14,
               background: 'var(--bg)',

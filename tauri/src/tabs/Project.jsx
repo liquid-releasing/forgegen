@@ -8,15 +8,20 @@
 //   5. If missing → run videoflow auto-chapter (writes sidecar + returns it)
 //   6. Sidecar lifted to App state → Analysis tab unlocked
 //
+// v0.3: left rail of recent projects (FF-style). One-click reload of any
+// recent file goes through the same handlePick flow — sidecar reuse first,
+// auto-chapter if missing. Each successful load (reuse or fresh) appends
+// the path to <appDataDir>/recents.json.
+//
 // Per ARCHITECTURE_ADDENDUM_2026_05.md "outputs grow, editors don't":
 // no chapter editor here — that's an FFP concern.
-//
-// v0.3 (TODO): recents list, device selection (FFP-only gates Stim/Multiaxis).
 
-import { useEffect, useRef, useState } from 'react';
-import { autoChapter, isTauri, pickAudioFile, readSidecar } from '../api/videoflow.js';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { autoChapter, cancelAutoChapter, isCancelled, isTauri, pickAudioFile, readSidecar } from '../api/videoflow.js';
+import { addRecent, getRecents, removeRecent } from '../api/recents.js';
 import { fmtTime, totalDurationMs } from '../lib/analysis.js';
 import Stepper from '../components/common/Stepper.jsx';
+import ProjectRail from '../components/project/ProjectRail.jsx';
 
 /** Format an elapsed-second count for the busy-state label. */
 function fmtElapsed(s) {
@@ -66,6 +71,7 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
   const [elapsedSec, setElapsedSec] = useState(0);
   const [stage, setStage] = useState(null);
   const [stageId, setStageId] = useState(null);
+  const [recents, setRecents] = useState([]);
   const intervalRef = useRef(null);
 
   // Tick an elapsed-time counter while we're in CHECKING/ANALYZING phases
@@ -87,33 +93,43 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
     };
   }, [phase]);
 
-  async function handlePick() {
+  // Load recents on mount.
+  useEffect(() => {
+    getRecents().then(setRecents).catch(() => setRecents([]));
+  }, []);
+
+  // Shared load flow: takes a picked path (from picker OR a recent click) and
+  // runs sidecar reuse → fall back to auto-chapter. On success, prepend to
+  // recents and refresh the list so the rail shows the freshly-opened file
+  // at top. `force: true` skips the sidecar-reuse step and re-runs analysis
+  // even when a cached sidecar exists — bound to the "Re-analyze" CTA for
+  // when the user wants to throw away cached data (after a cancel, or when
+  // they suspect the cache is stale).
+  const loadPath = useCallback(async (picked, { force = false } = {}) => {
     setError(null);
     setReusedSidecar(false);
     setStage(null);
     setStageId(null);
-    setPhase(PHASES.PICKING);
+    setPath(picked);
+    // Clear the previous file's sidecar from App state so the "Open Analysis"
+    // CTA + Analysis tab don't keep pointing at the old run while we work
+    // on this one. The CTA reappears once the new sidecar lands.
+    onSidecarLoaded(null);
+    onMediaPathChanged?.(picked);
     try {
-      const picked = await pickAudioFile();
-      if (!picked) {
-        setPhase(sidecar ? PHASES.LOADED : PHASES.IDLE);
-        return;
+      if (!force) {
+        setPhase(PHASES.CHECKING);
+        const existing = await readSidecar(picked);
+        if (existing) {
+          setReusedSidecar(true);
+          onSidecarLoaded(existing);
+          setPhase(PHASES.LOADED);
+          await addRecent(picked);
+          const updated = await getRecents();
+          setRecents(updated);
+          return;
+        }
       }
-      setPath(picked);
-      onMediaPathChanged?.(picked);
-
-      // Step 1: try to load an existing sidecar — avoids re-analysing
-      setPhase(PHASES.CHECKING);
-      const existing = await readSidecar(picked);
-      if (existing) {
-        setReusedSidecar(true);
-        onSidecarLoaded(existing);
-        setPhase(PHASES.LOADED);
-        return;
-      }
-
-      // Step 2: no sidecar yet → run auto-chapter, streaming per-stage
-      // labels from videoflow stderr into the stepper + detail line
       setPhase(PHASES.ANALYZING);
       const fresh = await autoChapter(picked, (label) => {
         setStage(label);
@@ -122,13 +138,64 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
       });
       onSidecarLoaded(fresh);
       setPhase(PHASES.LOADED);
+      await addRecent(picked);
+      const updated = await getRecents();
+      setRecents(updated);
+    } catch (err) {
+      // User cancel: silently return to IDLE — no error block, no half-state.
+      // The path stays set so the rail still highlights what was attempted,
+      // but the right pane reverts to the picker / empty state.
+      if (isCancelled(err)) {
+        setStage(null);
+        setStageId(null);
+        setPhase(PHASES.IDLE);
+        return;
+      }
+      setError(String(err));
+      setPhase(PHASES.ERROR);
+    }
+  }, [onMediaPathChanged, onSidecarLoaded]);
+
+  async function handleReanalyze() {
+    if (!path) return;
+    await loadPath(path, { force: true });
+  }
+
+  async function handleCancel() {
+    try {
+      await cancelAutoChapter();
+    } catch { /* swallow — UI will catch up via the rejected loadPath */ }
+  }
+
+  async function handlePick() {
+    setPhase(PHASES.PICKING);
+    try {
+      const picked = await pickAudioFile();
+      if (!picked) {
+        setPhase(sidecar ? PHASES.LOADED : PHASES.IDLE);
+        return;
+      }
+      await loadPath(picked);
     } catch (err) {
       setError(String(err));
       setPhase(PHASES.ERROR);
     }
   }
 
+  async function handleRecentClick(recentPath) {
+    await loadPath(recentPath);
+  }
+
+  async function handleRecentRemove(recentPath) {
+    await removeRecent(recentPath);
+    const updated = await getRecents();
+    setRecents(updated);
+  }
+
   const busy = phase === PHASES.PICKING || phase === PHASES.CHECKING || phase === PHASES.ANALYZING;
+  const filename = path
+    ? (path.split(/[\\/]/).pop() || path)
+    : null;
   const baseLabel = {
     picking: 'Choose a file…',
     checking: 'Checking for existing sidecar…',
@@ -146,13 +213,59 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
     : '';
 
   return (
-    <section className="tab-panel">
-      <h2>Project</h2>
+    <section
+      className="tab-panel"
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        gap: 0,
+        padding: 0,
+        minHeight: 0,
+        height: '100%',
+      }}
+    >
+      <ProjectRail
+        recents={recents}
+        activePath={path}
+        onPick={handlePick}
+        onRecentClick={handleRecentClick}
+        onRecentRemove={handleRecentRemove}
+        busy={busy}
+      />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 760 }}>
-        <p style={{ color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
-          v0.2 — pick an audio or video file to analyse. forgegen reuses the
-          existing <code>{'<stem>.chapters.json'}</code> sidecar if it exists,
+      <div style={{
+        flex: 1,
+        minWidth: 0,
+        overflow: 'auto',
+        padding: '20px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+      }}>
+        <h2 style={{
+          margin: 0,
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}>
+          <span>Project</span>
+          {filename && (
+            <span style={{
+              fontSize: 14,
+              fontWeight: 500,
+              color: 'var(--muted)',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            }}>
+              {filename}
+            </span>
+          )}
+        </h2>
+
+        <p style={{ color: 'var(--muted)', margin: 0, lineHeight: 1.5, maxWidth: 760 }}>
+          Pick an audio or video file to analyse. forgegen reuses the existing
+          <code> {'<stem>.chapters.json'} </code> sidecar if it exists,
           otherwise runs <code>videoflow auto-chapter</code> to generate one.
           {!isTauri() && ' Browser mode returns mock data on any pick.'}
         </p>
@@ -175,25 +288,6 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
           >
             {sidecar ? 'Choose another file…' : 'Choose audio/video file…'}
           </button>
-
-          {sidecar && (
-            <button
-              onClick={onSwitchToAnalysis}
-              style={{
-                padding: '10px 16px',
-                background: 'transparent',
-                color: 'var(--accent)',
-                border: '1px solid var(--accent)',
-                borderRadius: 6,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                fontSize: 13,
-              }}
-            >
-              Open Analysis →
-            </button>
-          )}
         </div>
 
         {busy && (
@@ -210,6 +304,17 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
               gap: 12,
             }}
           >
+            {filename && (
+              <div style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--fg, #e5e7eb)',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                wordBreak: 'break-all',
+              }}>
+                {filename}
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span
                 style={{
@@ -322,6 +427,76 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
             </div>
           </div>
         )}
+
+        {/* Bottom-right CTA. Role swaps with busy state:
+              - busy → Cancel (kills the python child via cancel_run)
+              - sidecar loaded + idle → Open Analysis →
+              - otherwise empty (idle, no sidecar yet)
+            Mirrors the FF ProjectTab's "Continue to …" placement so the user's
+            eye lands in the same spot for the forward action regardless of
+            phase. */}
+        <div style={{
+          marginTop: 'auto',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 10,
+        }}>
+          {busy && phase !== PHASES.PICKING && (
+            <button
+              onClick={handleCancel}
+              style={{
+                padding: '10px 16px',
+                background: 'transparent',
+                color: 'var(--warning, #ffb547)',
+                border: '1px solid var(--warning, #ffb547)',
+                borderRadius: 6,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 13,
+              }}
+            >
+              Cancel
+            </button>
+          )}
+          {sidecar && !busy && (
+            <>
+              <button
+                onClick={handleReanalyze}
+                title="Discard the cached sidecar and run videoflow auto-chapter again"
+                style={{
+                  padding: '10px 16px',
+                  background: 'transparent',
+                  color: 'var(--muted)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: 13,
+                }}
+              >
+                ↻ Re-analyze
+              </button>
+              <button
+                onClick={onSwitchToAnalysis}
+                style={{
+                  padding: '10px 16px',
+                  background: 'var(--accent)',
+                  color: '#0c0d10',
+                  border: '1px solid var(--accent)',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  fontSize: 13,
+                }}
+              >
+                Open Analysis →
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <style>{`
