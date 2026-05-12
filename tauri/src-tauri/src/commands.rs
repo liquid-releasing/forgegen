@@ -130,19 +130,26 @@ async fn spawn_videoflow(args: &[&str]) -> Result<Value, String> {
     })
 }
 
-/// Spawn videoflow and stream stderr line-by-line. Lines prefixed with
-/// `progress: ` are emitted as Tauri events on `event_name` so the React
-/// UI can render per-stage status during long runs. Other stderr lines
-/// are accumulated for the error path.
+/// Spawn videoflow and stream per-stage progress as Tauri events on
+/// `event_name`. Lines arrive via two independent paths:
+///
+///   1. **stderr line reader** — works on platforms where Tokio's piped
+///      stdio actually forwards python.exe output. Linux/macOS, mostly.
+///   2. **temp-file side-channel** — videoflow's `_emit_progress()` also
+///      appends `progress: <label>\n` to the file pointed at by the
+///      `VIDEOFLOW_PROGRESS_FILE` env var. We poll that file every 200ms
+///      and emit the same Tauri events. This is the path that actually
+///      works on Windows: Tokio's Command can't read python.exe's piped
+///      stderr/stdout reliably here (verified — direct PowerShell launch
+///      flushes everything; Tokio launch produces zero bytes on both
+///      pipes). The file gets written regardless.
+///
+/// Both paths emit on the same event; React deduplication isn't needed
+/// because the Stepper just maps the latest label to a stage.
 ///
 /// stdout is drained in its own task (NOT via wait_with_output) so the
-/// pipe never fills mid-process. Earlier version relied on
-/// wait_with_output after stderr.take(); under that combination videoflow
-/// exited with code 120 even on successful runs — the hand-off between
-/// taken-and-tasked-stderr and wait_with_output's internal stdout reader
-/// produced an EPIPE-equivalent on Windows that Python's atexit handler
-/// surfaced as a non-zero exit. Splitting both pipes into explicit drain
-/// tasks + a plain `child.wait()` makes the lifetimes obvious.
+/// pipe never fills mid-process — earlier wait_with_output combination
+/// surfaced as exit code 120 from Python's atexit on Windows.
 async fn spawn_videoflow_streaming(
     app: &AppHandle,
     event_name: &str,
@@ -152,8 +159,22 @@ async fn spawn_videoflow_streaming(
     let mut full_args: Vec<String> = prefix_args;
     full_args.extend(args.iter().map(|s| s.to_string()));
 
+    // Side-channel file: unique per spawn so concurrent runs don't collide.
+    let progress_file = std::env::temp_dir().join(format!(
+        "forgegen_progress_{}_{}.log",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0)
+    ));
+    // Truncate/create so polling starts from a known empty state. videoflow
+    // opens it in append mode so this just resets length to 0.
+    tokio::fs::write(&progress_file, b"").await.ok();
+
     let mut child = Command::new(&bin)
         .args(&full_args)
+        .env("VIDEOFLOW_PROGRESS_FILE", &progress_file)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -192,13 +213,51 @@ async fn spawn_videoflow_streaming(
         buf
     });
 
+    // Side-channel polling task. Lives until the main task signals shutdown
+    // after child.wait() returns; one final drain catches anything written
+    // between the last tick and exit.
+    let (shutdown_tx, mut shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+    let app_for_poll = app.clone();
+    let event_name_for_poll = event_name.to_string();
+    let progress_file_for_poll = progress_file.clone();
+    let poll_task = tokio::spawn(async move {
+        let mut offset: u64 = 0;
+        let mut leftover = String::new();
+        loop {
+            tokio::select! {
+                _ = &mut shutdown_rx => break,
+                _ = tokio::time::sleep(std::time::Duration::from_millis(200)) => {
+                    offset = drain_progress_file(
+                        &progress_file_for_poll,
+                        offset,
+                        &mut leftover,
+                        &app_for_poll,
+                        &event_name_for_poll,
+                    ).await;
+                }
+            }
+        }
+        drain_progress_file(
+            &progress_file_for_poll,
+            offset,
+            &mut leftover,
+            &app_for_poll,
+            &event_name_for_poll,
+        ).await;
+    });
+
     let status = child
         .wait()
         .await
         .map_err(|e| format!("wait videoflow failed: {}", e))?;
 
+    let _ = shutdown_tx.send(());
+    let _ = poll_task.await;
+
     let stderr_other = stderr_task.await.unwrap_or_default();
     let stdout_bytes = stdout_task.await.unwrap_or_default();
+
+    let _ = tokio::fs::remove_file(&progress_file).await;
 
     if !status.success() {
         return Err(format!(
@@ -213,6 +272,51 @@ async fn spawn_videoflow_streaming(
         let preview: String = stdout.chars().take(200).collect();
         format!("JSON parse failed: {} — stdout preview: {}", e, preview)
     })
+}
+
+/// Read new bytes from `path` starting at `offset`, append to `leftover`,
+/// emit any complete `progress: <label>` lines, and return the new file
+/// length to use as the next offset. Failures are silent — polling skips
+/// the tick rather than aborting the task.
+async fn drain_progress_file(
+    path: &Path,
+    offset: u64,
+    leftover: &mut String,
+    app: &AppHandle,
+    event_name: &str,
+) -> u64 {
+    use tokio::io::{AsyncReadExt, AsyncSeekExt};
+    let Ok(mut file) = tokio::fs::File::open(path).await else {
+        return offset;
+    };
+    let Ok(metadata) = file.metadata().await else {
+        return offset;
+    };
+    let len = metadata.len();
+    if len <= offset {
+        return offset;
+    }
+    if file.seek(std::io::SeekFrom::Start(offset)).await.is_err() {
+        return offset;
+    }
+    let mut buf = Vec::with_capacity((len - offset) as usize);
+    if file.read_to_end(&mut buf).await.is_err() {
+        return offset;
+    }
+    leftover.push_str(&String::from_utf8_lossy(&buf));
+    while let Some(nl) = leftover.find('\n') {
+        let line: String = leftover.drain(..=nl).collect();
+        let trimmed = line.trim_end_matches(&['\r', '\n'][..]);
+        if let Some(msg) = trimmed.strip_prefix("progress: ") {
+            let _ = app.emit(event_name, msg.to_string());
+        } else if let Some(msg) = trimmed.strip_prefix("error: ") {
+            // Python errors go via the side-channel because Tokio can't
+            // read python.exe's stderr on Windows. Surfaced to the dev
+            // terminal so failed runs are diagnosable without devtools.
+            eprintln!("[forgegen videoflow error] {}", msg);
+        }
+    }
+    len
 }
 
 // ---------------------------------------------------------------------------
