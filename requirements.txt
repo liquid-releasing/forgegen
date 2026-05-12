@@ -1,9 +1,0 @@
-streamlit>=1.32.0
-plotly>=5.18.0
-pandas>=2.0.0
-# librosa is pulled by videoflow's [audio] extra — required for beat analysis.
-# Pinned explicitly here (rather than just relying on videoflow[audio]) so a
-# pip install -r requirements.txt is never surprised by missing analysis deps.
-librosa>=0.10
-videoflow[audio] @ git+https://github.com/liquid-releasing/videoflow.git
-forge-ui-components @ git+https://github.com/liquid-releasing/forge-ui-components.git

@@ -10,219 +10,148 @@ permissions:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Windows build
+  # Build the Tauri app for each platform
   # ---------------------------------------------------------------------------
-  build-windows:
-    name: Build — Windows
-    runs-on: windows-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            os_name: windows
+            bundle_glob: tauri/src-tauri/target/release/bundle/msi/*.msi
+            extra_glob: tauri/src-tauri/target/release/bundle/nsis/*.exe
+          - platform: macos-latest
+            os_name: macos
+            bundle_glob: tauri/src-tauri/target/release/bundle/dmg/*.dmg
+            extra_glob: ""
+          - platform: ubuntu-latest
+            os_name: linux
+            bundle_glob: tauri/src-tauri/target/release/bundle/appimage/*.AppImage
+            extra_glob: tauri/src-tauri/target/release/bundle/deb/*.deb
+
+    name: Build — ${{ matrix.os_name }}
+    runs-on: ${{ matrix.platform }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.11"
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tauri/package-lock.json
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-desktop.txt
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Build with PyInstaller
-        run: pyinstaller ForgeGen.spec --noconfirm --clean
-
-      - name: Verify build
-        run: |
-          if (!(Test-Path "dist\ForgeGen\ForgeGen.exe")) {
-            Write-Error "Build artifact not found"
-            exit 1
-          }
-
-      - name: Zip artifact
-        run: Compress-Archive -Path dist\ForgeGen -DestinationPath dist\ForgeGen-windows.zip
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
         with:
-          name: ForgeGen-windows
-          path: dist/ForgeGen-windows.zip
+          workspaces: tauri/src-tauri
 
-  # ---------------------------------------------------------------------------
-  # macOS build
-  # ---------------------------------------------------------------------------
-  build-macos:
-    name: Build — macOS
-    runs-on: macos-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-desktop.txt
-
-      - name: Generate .icns icon
-        run: |
-          ICO_SRC="media/forgegen_icon.png"
-          ICNS_OUT="media/forgegen.icns"
-          if [ -f "$ICO_SRC" ] && [ ! -f "$ICNS_OUT" ]; then
-            ICONSET_DIR="$(mktemp -d)/ForgeGen.iconset"
-            mkdir -p "$ICONSET_DIR"
-            for SIZE in 16 32 64 128 256 512; do
-              sips -z "$SIZE" "$SIZE" "$ICO_SRC" --out "$ICONSET_DIR/icon_${SIZE}x${SIZE}.png" 2>/dev/null
-              DOUBLE=$((SIZE * 2))
-              sips -z "$DOUBLE" "$DOUBLE" "$ICO_SRC" --out "$ICONSET_DIR/icon_${SIZE}x${SIZE}@2x.png" 2>/dev/null
-            done
-            iconutil -c icns "$ICONSET_DIR" -o "$ICNS_OUT"
-            rm -rf "$(dirname "$ICONSET_DIR")"
-            echo "Generated $ICNS_OUT"
-          fi
-
-      - name: Build with PyInstaller
-        run: pyinstaller ForgeGen.spec --noconfirm --clean
-
-      - name: Verify build
-        run: |
-          if [ ! -d "dist/ForgeGen.app" ] && [ ! -d "dist/ForgeGen" ]; then
-            echo "Build artifact not found"
-            exit 1
-          fi
-
-      - name: Zip artifact
-        run: |
-          cd dist
-          if [ -d "ForgeGen.app" ]; then
-            zip -r ForgeGen-macos.zip ForgeGen.app
-          else
-            zip -r ForgeGen-macos.zip ForgeGen
-          fi
-
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ForgeGen-macos
-          path: dist/ForgeGen-macos.zip
-
-  # ---------------------------------------------------------------------------
-  # Linux build
-  # ---------------------------------------------------------------------------
-  build-linux:
-    name: Build — Linux
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install system dependencies (PyWebView GTK backend)
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            python3-gi \
-            gir1.2-gtk-3.0 \
-            gir1.2-webkit2-4.1 \
-            libgirepository1.0-dev \
-            libcairo2-dev
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            patchelf
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+      - name: Install npm dependencies
+        working-directory: tauri
+        run: npm ci
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-desktop.txt
+      - name: Build Tauri bundle
+        working-directory: tauri
+        run: npm run tauri:build
 
-      - name: Build with PyInstaller
-        run: pyinstaller ForgeGen.spec --noconfirm --clean
-
-      - name: Verify build
-        run: |
-          if [ ! -f "dist/ForgeGen/ForgeGen" ]; then
-            echo "Build artifact not found"
-            exit 1
-          fi
-
-      - name: Create tarball
-        run: tar -czf dist/ForgeGen-linux.tar.gz -C dist ForgeGen
-
-      - name: Upload Linux artifact
+      - name: Upload bundles
         uses: actions/upload-artifact@v4
         with:
-          name: ForgeGen-linux
-          path: dist/ForgeGen-linux.tar.gz
+          name: forgegen-${{ matrix.os_name }}
+          if-no-files-found: error
+          path: |
+            ${{ matrix.bundle_glob }}
+            ${{ matrix.extra_glob }}
 
   # ---------------------------------------------------------------------------
-  # Create GitHub Release with all artifacts
+  # Attach all artifacts to a release in liquid-releasing/forgegen-releases
   # ---------------------------------------------------------------------------
   release:
     name: Publish Release
-    needs: [build-windows, build-macos, build-linux]
+    needs: [build]
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download Windows artifact
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ForgeGen-windows
           path: artifacts/
 
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ForgeGen-macos
-          path: artifacts/
-
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ForgeGen-linux
-          path: artifacts/
+      - name: List downloaded artifacts
+        run: find artifacts -type f | sort
 
       - name: Compute release name
         id: relname
         run: |
           TAG="${GITHUB_REF_NAME}"
           STRIPPED="${TAG#v}"
-          NAME="ForgeGen ${STRIPPED//-/ }"
+          NAME="forgegen ${STRIPPED//-/ }"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release
+      - name: Publish to forgegen-releases
         uses: softprops/action-gh-release@v2
         with:
           repository: liquid-releasing/forgegen-releases
           token: ${{ secrets.RELEASES_PAT }}
           name: ${{ steps.relname.outputs.name }}
+          tag_name: ${{ github.ref_name }}
           prerelease: false
+          generate_release_notes: true
+          append_body: true
           files: |
-            artifacts/ForgeGen-windows.zip
-            artifacts/ForgeGen-macos.zip
-            artifacts/ForgeGen-linux.tar.gz
+            artifacts/forgegen-windows/*.msi
+            artifacts/forgegen-windows/*.exe
+            artifacts/forgegen-macos/*.dmg
+            artifacts/forgegen-linux/*.AppImage
+            artifacts/forgegen-linux/*.deb
           body: |
-            Generate funscripts from audio in seconds — a local desktop app.
+            forgegen — generate funscripts from audio in seconds. Local
+            desktop app, no cloud.
 
             ## Downloads
-            - **Windows** — `ForgeGen-windows.zip` — unzip and run `ForgeGen.exe`
-            - **macOS** — `ForgeGen-macos.zip` — unzip and open `ForgeGen.app`
-            - **Linux** — `ForgeGen-linux.tar.gz` — extract and run `ForgeGen/ForgeGen`
+            - **Windows** — `forgegen_*_x64_en-US.msi` (installer) or
+              `forgegen_*_x64-setup.exe` (NSIS) — install and launch.
+            - **macOS** — `forgegen_*.dmg` — open, drag to Applications.
+              First launch: right-click → Open (the build is unsigned).
+            - **Linux** — `forgegen_*.AppImage` — `chmod +x` and run.
+              `.deb` available for Debian/Ubuntu.
 
-            See the [docs](https://liquid-releasing.github.io/forgegen) for a first-run walkthrough.
-          append_body: true
-          # Auto-prepend the commit/PR list since the previous tag —
-          # cheap per-version "what's new" without maintaining a
-          # changelog. Major/marketing releases override by pre-writing
-          # a CHANGELOG entry or rich annotated tag message.
-          generate_release_notes: true
+            Live per-stage progress (Extract / Load / Detect / Beats /
+            Phrases / Sidecar) lights up dot-by-dot during runs.
+
+            See the [website](https://forgegen.app) for a walkthrough.
+
+  # ---------------------------------------------------------------------------
+  # Notify forgegen-web so latest-version.json catches up
+  # ---------------------------------------------------------------------------
+  notify-web:
+    name: Notify forgegen-web
+    needs: [release]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Dispatch release-published to forgegen-web
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.RELEASES_PAT }}
+          repository: liquid-releasing/forgegen-web
+          event-type: release-published
+          client-payload: |
+            { "tag": "${{ github.ref_name }}" }

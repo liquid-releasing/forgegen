@@ -11,17 +11,15 @@ generation: phrase-level mode shaping (tease / edging / break / chaotic
 profiles), offline, MIT-licensed, with a clean handoff to FunscriptForge for
 editing.
 
-> **Status:** v0.0.4-alpha ships the engine + UI overhaul. Comparison-strip
-> previews show every Style / Stroke-density / Tone option as a velocity-
-> coloured curve thumbnail with synced ◀▶ scroll + 5-step zoom ladder
-> (4s → 16s → 1m → 3m → 10m). Stats sidebar surfaces the same metrics
-> FunscriptForge uses (mean pos, range, avg vel, p90 vel, peak vel) so a
-> generated curve is comparable to gold-standard reference tracks at a
-> glance. PLP-based stable beat tracking, locked-BPM mode, sub-beat
-> density (1/2/4/8 actions per beat), per-phrase auto-tone, and shared
-> `videoflow.events` + `videoflow.chapters` infrastructure for v0.0.5
-> chapter intent. The video-input path is on the roadmap — see
-> [Architecture](architecture/ARCHITECTURE.md).
+> **Status:** v0.2.0-mvp2 — second MVP cut on the Tauri+React rewrite.
+> Live per-stage progress (Extract / Load / Detect / Beats / Phrases /
+> Sidecar) lights up dot-by-dot during auto-chapter and Generate runs,
+> with ffmpeg sub-stage timecodes during long extracts. Pick file →
+> analyse → review chapters/phrases → author per-chapter recipes with
+> target preset → generate funscript. The legacy Streamlit codebase
+> lives on the `legacy-streamlit` branch. See
+> [REFACTOR_TO_TAURI_REACT.md](REFACTOR_TO_TAURI_REACT.md) and
+> [BRIDGE_DESIGN.md](BRIDGE_DESIGN.md) for the new architecture.
 
 ---
 
