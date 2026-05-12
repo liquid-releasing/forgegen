@@ -4,6 +4,18 @@ All notable changes to forgegen are recorded here. Format loosely follows [Keep 
 
 ---
 
+## v0.2.1-mvp3 — 2026-05-12
+
+CI validation cut. First tag pushed through the new Tauri build matrix (`release.yml` rewritten in v0.2.0-mvp2). No app-behaviour changes.
+
+### Changed
+
+- Bumps versions across `package.json`, `Cargo.toml`, `tauri.conf.json` to exercise the cross-platform matrix (windows-latest / macos-latest / ubuntu-latest) and the `notify-web` dispatch step that updates `forgegen-web`'s `latest-version.json` automatically.
+
+If the matrix lands `.msi`, `.dmg`, and `.AppImage` artifacts on the release and the version badge on forgegen.app catches up without manual intervention, the release pipeline is solid for future tags.
+
+---
+
 ## v0.2.0-mvp2 — 2026-05-12
 
 Second MVP cut on the Tauri+React rewrite. Live per-stage progress (the visible piece that was missing in mvp1) now works end-to-end, with sub-stage progress for the long ffmpeg extract.

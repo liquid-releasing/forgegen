@@ -1,6 +1,6 @@
 [package]
 name = "forgegen"
-version = "0.2.0-mvp2"
+version = "0.2.1-mvp3"
 description = "forgegen — easy-button funscript/haptics generator"
 authors = ["Liquid Releasing"]
 edition = "2021"
