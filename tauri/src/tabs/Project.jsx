@@ -492,7 +492,7 @@ export default function Project({ sidecar, onSidecarLoaded, onMediaPathChanged, 
                   fontSize: 13,
                 }}
               >
-                Open Analysis →
+                Build Funscript →
               </button>
             </>
           )}
