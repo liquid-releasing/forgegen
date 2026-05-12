@@ -150,12 +150,13 @@ jobs:
             desktop app, no cloud.
 
             ## Downloads
-            - **Windows** — `forgegen_*_x64_en-US.msi` (installer) or
-              `forgegen_*_x64-setup.exe` (NSIS) — install and launch.
-            - **macOS** — `forgegen_*.dmg` — open, drag to Applications.
-              First launch: right-click → Open (the build is unsigned).
-            - **Linux** — `forgegen_*.AppImage` — `chmod +x` and run.
-              `.deb` available for Debian/Ubuntu.
+            - **Windows** — `ForgeGen-Setup-windows.msi` (recommended) or
+              `ForgeGen-Setup-windows.exe` (NSIS) — install and launch.
+            - **macOS (Apple Silicon)** — `ForgeGen-Setup-macos-aarch64.dmg`
+              — open, drag to Applications. First launch: right-click → Open
+              (the build is unsigned).
+            - **Linux** — `ForgeGen-Setup-linux.AppImage` — `chmod +x` and
+              run. `ForgeGen-Setup-linux.deb` available for Debian/Ubuntu.
 
             Live per-stage progress (Extract / Load / Detect / Beats /
             Phrases / Sidecar) lights up dot-by-dot during runs.
