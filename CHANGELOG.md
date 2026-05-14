@@ -4,6 +4,39 @@ All notable changes to forgegen are recorded here. Format loosely follows [Keep 
 
 ---
 
+## v0.3.0 — 2026-05-14
+
+First "complete app" release. Real end-to-end flow: pick a media file, analyse, author per-chapter recipes, generate, inspect the funscript. Output tab is new in this release; the Generate flow gained a cancel button, a recipe summary, and sequential next-tab CTAs across the four tabs. Multiple Windows-only bridge fixes (cancel didn't actually kill python, Open-in-Explorer silently fell back to My Documents, copy-onto-self locked the file, Generate could delete the prior funscript mid-run on long files).
+
+### Added
+
+- **Output tab v0.1 — funscript inspector.** Summary card (path / actions / BPM / duration / source partial-MD5), rolling actions-per-second density chart with chapter dividers, per-chapter breakdown table joining the funscript's `generated_from` block with the sidecar's chapter names, **Open in Explorer** (file selected in the host file manager), and **Save a copy…** (copies to a user-picked destination; original stays put).
+- **Version dropdown.** The Output tab enumerates the canonical funscript plus all `<stem>.funscript.<ts>.bak` files left by prior runs. Switching to a backup re-reads it and shows an orange "Viewing backup" header so the user always knows which version they're inspecting.
+- **Cancel mid-Generate.** Warning-colour button that swaps in for the primary CTA during generation, kills the in-flight videoflow run, and returns to idle without showing an error. Same plumbing as auto-chapter's cancel.
+- **Recipe summary on Generate.** Busy block and result card show `Style: X · Density: Y · Shape: Z`; per-field "mixed" appears when chapters differ.
+- **Sequential CTA flow.** Each tab's forward CTA names the next tab: Project → "View Analysis →", Analysis → "Build Funscript →", Generate → "View Output ↗" + "Regenerate" link.
+- **Style speed hint** in the dropdown labels: "Percussive — drums lead (slower)" / "Full mix — vocals + melody (faster)". HPSS percussive separation is what makes percussive slower; the label now sets expectation at the point of choice.
+
+### Fixed
+
+- **Cancel hangs during HPSS-bound beats analysis.** The bridge spawns `cmd /C python.exe …`; `TerminateProcess(cmd)` does NOT cascade to the python grandchild, so python kept holding the stderr pipe and the bridge's stderr-drain task hung forever. New `kill_process_tree` helper shells out to `taskkill /F /T /PID` on Windows; "Cancelling…" now resolves in ~1s for both Generate and Project-load runs.
+- **Generate could destroy the prior funscript mid-run on long files.** The bridge was renaming the existing `<stem>.funscript` → `.bak` BEFORE videoflow ran; clicking into the Output tab during a long Generate showed ENOENT because the canonical was already gone. Now writes to a unique temp path and atomic-renames on success; backups happen AFTER the new file is ready, not before. Cancelled or failed runs leave the prior canonical untouched.
+- **Open in Explorer silently opened My Documents.** Rust's `Command::arg` applies CommandLineToArgvW-style quoting that Explorer's argv parser rejects on any path with spaces/parens. Switched to `raw_arg` on Windows so `/select,"<path>"` is passed verbatim.
+- **Save-as picker defaulted to the canonical path** — naive Save click triggered the OS replace-prompt then hit our same-source-and-destination guard. Now suggests `<stem> (copy).funscript` so the dialog points at a distinct name; the same-path guard remains as a safety net.
+- **Save-as on the same file** failed with Windows os error 32 ("being used by another process"). `save_funscript_copy` now canonicalises both sides and returns a friendly error pointing the user at picking a different folder/name.
+
+### Changed
+
+- `dialog:allow-save` capability added (required by `pickSaveAsPath`).
+- Beats-stage regex on the Generate Stepper extended to match per-chapter labels (`Analyzing chapter N/M`, `Detecting beats`, `Computing phrases`) — long-file Beats stage now ticks chapter-by-chapter instead of looking frozen.
+
+### Notes for developers
+
+- The `cmd /C` python wrapper isn't going away — it's still the only way to get Python's stderr through Tokio on Windows. The process-tree kill is the right pattern when you wrap a subprocess; copy it if you spawn similar shells elsewhere.
+- "v0.3.0" is the first non-`mvp` tag and clears the MSI numeric-only constraint — `tauri.conf.json` carries `0.3.0` verbatim with no suffix stripping needed.
+
+---
+
 ## v0.2.1-mvp3 — 2026-05-12
 
 CI validation cut. First tag pushed through the new Tauri build matrix (`release.yml` rewritten in v0.2.0-mvp2). No app-behaviour changes.
