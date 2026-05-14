@@ -21,8 +21,8 @@ import {
 import { exceedsHeadroom } from '../../lib/targets.js';
 
 export const STYLE_OPTIONS = [
-  { value: 'percussive', label: 'Percussive — drums lead' },
-  { value: 'full', label: 'Full mix — vocals + melody' },
+  { value: 'percussive', label: 'Percussive — drums lead (slower)' },
+  { value: 'full', label: 'Full mix — vocals + melody (faster)' },
 ];
 
 export const DENSITY_OPTIONS = [

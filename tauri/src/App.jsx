@@ -1,27 +1,34 @@
 // App shell — TopBar (env badge + tab nav) + active tab body.
-// Sidecar + mediaPath lifted here so Project / Analysis / Generate can share.
+// Sidecar + mediaPath + lastFunscript lifted here so Project / Analysis /
+// Generate / Output can share state without re-fetching on tab switch.
 
 import { useState } from 'react';
 import Project from './tabs/Project.jsx';
 import Analysis from './tabs/Analysis.jsx';
 import Generate from './tabs/Generate.jsx';
+import Output from './tabs/Output.jsx';
 import { isTauri } from './api/videoflow.js';
 
 // Device tab dropped 2026-05-11 — "device" really meant "what stroke
 // density does my toy comfortably sustain?", which fits inline as the
-// Target preset on Generate (see lib/targets.js). Multi-output (funscript
-// + bhaptics + multi-axis from one recipe) lives in Output tab when added.
+// Target preset on Generate (see lib/targets.js). Output replaces it as
+// the funscript-inspection / multi-format-export surface.
 const TABS = [
   { id: 'project', label: 'Project', enabled: true },
   { id: 'analysis', label: 'Analysis', enabled: true },
   { id: 'generate', label: 'Generate', enabled: true },
-  { id: 'output', label: 'Output', enabled: false },
+  { id: 'output', label: 'Output', enabled: true },
 ];
 
 export default function App() {
   const [tab, setTab] = useState('project');
   const [sidecar, setSidecar] = useState(null);
   const [mediaPath, setMediaPath] = useState(null);
+  // The result returned by the most recent successful generateFunscript
+  // call this session. Shape: { output, bpm, beats, phrases, duration_ms,
+  // actions, mocked }. The Output tab gates on this — switching to Output
+  // before generating shows a hint to run Generate first.
+  const [lastFunscript, setLastFunscript] = useState(null);
 
   return (
     <div className="app">
@@ -33,7 +40,8 @@ export default function App() {
           {TABS.map((t) => {
             const active = t.id === tab;
             const needsSidecar = (t.id === 'analysis' || t.id === 'generate') && !sidecar;
-            const disabled = !t.enabled || needsSidecar;
+            const needsFunscript = t.id === 'output' && !lastFunscript;
+            const disabled = !t.enabled || needsSidecar || needsFunscript;
             return (
               <button
                 key={t.id}
@@ -44,6 +52,8 @@ export default function App() {
                     ? 'Not yet implemented'
                     : needsSidecar
                     ? 'Load a sidecar via Project tab first'
+                    : needsFunscript
+                    ? 'Generate a funscript first — Output inspects what Generate produced'
                     : ''
                 }
                 className={`tabbutton ${active ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
@@ -79,7 +89,17 @@ export default function App() {
         {tab === 'analysis' && (
           <Analysis sidecar={sidecar} onContinue={() => setTab('generate')} />
         )}
-        {tab === 'generate' && <Generate sidecar={sidecar} mediaPath={mediaPath} />}
+        {tab === 'generate' && (
+          <Generate
+            sidecar={sidecar}
+            mediaPath={mediaPath}
+            onFunscriptReady={setLastFunscript}
+            onSwitchToOutput={() => setTab('output')}
+          />
+        )}
+        {tab === 'output' && (
+          <Output sidecar={sidecar} lastFunscript={lastFunscript} />
+        )}
       </main>
     </div>
   );

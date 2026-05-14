@@ -47,6 +47,7 @@ Pure DSP — no video, no LLM, no GPU required.
 - [ ] Stereostim A/B channel interpretation (channel dominance → stroke position)
 - [ ] Blend estim path into the same UI as music path
 - [ ] Export: single-channel funscript for estim devices
+- [ ] Stand up mkdocs site for videoflow (lives in videoflow; forgegen docs cross-link to it for shared concepts — `analyze_beats()`, AudioBeatMap, structural primitives)
 
 Open questions
 

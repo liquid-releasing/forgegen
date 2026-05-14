@@ -153,6 +153,85 @@ export async function pickAudioFile() {
   return selected ?? null;
 }
 
+/** Open a native save-as picker pre-filled with `defaultPath`. Returns the
+ * absolute path the user chose, or null if they cancelled. Browser mode
+ * returns a deterministic mock so the Save-as UI flow can be exercised.
+ *
+ * The picker pre-fills a `<stem> (copy).funscript` suggestion in the same
+ * directory rather than the canonical path itself — Save-as creates a copy
+ * somewhere else; pre-filling the canonical lets a naive user hit Save
+ * without changing the name, which then triggers the OS "replace?" prompt
+ * and lands on our same-source-and-destination error. Suggesting a distinct
+ * name short-circuits that whole confusion. */
+export async function pickSaveAsPath(defaultPath) {
+  if (!isTauri()) {
+    return Promise.resolve(`browser-mock://saved-${Date.now()}.funscript`);
+  }
+  const { save } = await import('@tauri-apps/plugin-dialog');
+  const selected = await save({
+    defaultPath: suggestCopyPath(defaultPath),
+    filters: [{ name: 'Funscript', extensions: ['funscript'] }],
+  });
+  return selected ?? null;
+}
+
+/** Build a "<original> (copy).funscript" suggestion next to the source so
+ * the Save-as picker doesn't default to the same filename the user is
+ * looking at. Handles both forward and back slashes; passes a falsy
+ * argument straight through so Tauri's save() falls back to its default
+ * directory behavior. Exported for tests. */
+export function suggestCopyPath(originalPath) {
+  if (!originalPath) return originalPath;
+  const norm = String(originalPath);
+  // Find the last separator so we preserve drive letters / UNC paths.
+  const sepIdx = Math.max(norm.lastIndexOf('\\'), norm.lastIndexOf('/'));
+  const dir = sepIdx >= 0 ? norm.slice(0, sepIdx + 1) : '';
+  const name = sepIdx >= 0 ? norm.slice(sepIdx + 1) : norm;
+  const dotIdx = name.lastIndexOf('.');
+  const stem = dotIdx > 0 ? name.slice(0, dotIdx) : name;
+  const ext = dotIdx > 0 ? name.slice(dotIdx) : '.funscript';
+  return `${dir}${stem} (copy)${ext}`;
+}
+
+// ---------------------------------------------------------------------------
+// Output tab — funscript I/O
+// ---------------------------------------------------------------------------
+
+/** Read a funscript JSON file from disk. Returns the parsed object —
+ * `{ version, range, actions: [{at, pos}], metadata: { generated_from } }`.
+ * The Output tab uses `actions` for the density chart and
+ * `metadata.generated_from` for the per-chapter breakdown. */
+export async function readFunscript(path) {
+  return invokeOrMock('read_funscript', { path }, () => mockReadFunscript(path));
+}
+
+/** Open the host OS file manager with `path` selected. No-op in browser. */
+export async function revealInExplorer(path) {
+  if (!isTauri()) return Promise.resolve();
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke('reveal_in_explorer', { path });
+}
+
+/** Copy a funscript from `src` to `dst`. The Save-as flow calls this after
+ * `pickSaveAsPath`. Browser mode is a no-op (the picker returned a mock path
+ * that doesn't correspond to anything on disk). */
+export async function saveFunscriptCopy(src, dst) {
+  if (!isTauri()) return Promise.resolve();
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke('save_funscript_copy', { src, dst });
+}
+
+/** List the current funscript and all `<stem>.funscript.<ts>.bak` versions
+ * next to a media file. Used by the Output tab to render a version-switcher
+ * dropdown and as a fallback target when the current funscript is missing.
+ *
+ * Returns `[{ path, is_current, mtime_secs, label }]` sorted newest first. */
+export async function listFunscriptVersions(path) {
+  return invokeOrMock('list_funscript_versions', { path }, () =>
+    mockListFunscriptVersions(path),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Mocks (browser-only mode)
 // ---------------------------------------------------------------------------
@@ -283,6 +362,81 @@ function mockGenerateFunscript(path, options, onProgress) {
       }
     };
     tick();
+  });
+}
+
+function mockListFunscriptVersions(path) {
+  // In browser-mode we don't have a real filesystem — fake two backups +
+  // the current so the version dropdown is exercised in the UI dev loop.
+  const stem = String(path).replace(/\.funscript$/i, '');
+  const now = Math.floor(Date.now() / 1000);
+  return Promise.resolve([
+    { path: `${stem}.funscript`, is_current: true, mtime_secs: now, label: 'current' },
+    {
+      path: `${stem}.funscript.2026-05-13T14-22-08.bak`,
+      is_current: false,
+      mtime_secs: now - 3600,
+      label: '2026-05-13T14-22-08',
+    },
+    {
+      path: `${stem}.funscript.2026-05-12T18-05-41.bak`,
+      is_current: false,
+      mtime_secs: now - 86400,
+      label: '2026-05-12T18-05-41',
+    },
+  ]);
+}
+
+function mockReadFunscript(path) {
+  // Browser-mode funscript matches the same 4-chapter mock track as
+  // buildMockSidecar (572s total, intro/build/climax/recover). Action density
+  // varies per chapter so the Output tab's rolling-density chart actually
+  // looks like something. Each chapter's recipe matches what Generate would
+  // send for the same shape: ambient → break-like, music → percussive/density.
+  const CHAPTERS = [
+    { at_ms: 0,      end_ms: 90000,  density_per_sec: 0.6 },  // intro ambient
+    { at_ms: 90000,  end_ms: 240000, density_per_sec: 2.0 },  // build
+    { at_ms: 240000, end_ms: 480000, density_per_sec: 4.3 },  // climax
+    { at_ms: 480000, end_ms: 572000, density_per_sec: 1.0 },  // recover
+  ];
+  const RECIPES = [
+    { source: 'percussive', stroke_density: 'half', tone: 'flat', emphasize_beats: false },
+    { source: 'percussive', stroke_density: '1',    tone: 'rise', emphasize_beats: false },
+    { source: 'percussive', stroke_density: '2',    tone: 'auto', emphasize_beats: true  },
+    { source: 'percussive', stroke_density: 'half', tone: 'fall', emphasize_beats: false },
+  ];
+  const actions = [];
+  let pos = 50;
+  CHAPTERS.forEach((c) => {
+    const intervalMs = 1000 / c.density_per_sec;
+    for (let t = c.at_ms; t < c.end_ms; t += intervalMs) {
+      const seed = (actions.length * 2654435761) >>> 0;
+      const swing = ((seed % 1000) / 1000) * 60 - 30;
+      pos = Math.max(0, Math.min(100, 50 + Math.round(swing)));
+      actions.push({ at: Math.round(t), pos });
+    }
+  });
+
+  return Promise.resolve({
+    version: '1.0',
+    inverted: false,
+    range: 90,
+    actions,
+    metadata: {
+      title: String(path).split(/[/\\]/).pop().replace(/\.[^.]+$/, ''),
+      generated_from: {
+        tool: 'videoflow',
+        tool_version: '0.0.7-alpha (browser-mock)',
+        source: {
+          path,
+          duration_ms: 572000,
+          partial_md5: 'mockmd5deadbeefcafe1234',
+          size_bytes: 12345678,
+        },
+        chapters: CHAPTERS.map((c) => ({ at_ms: c.at_ms, end_ms: c.end_ms })),
+        recipes: RECIPES,
+      },
+    },
   });
 }
 

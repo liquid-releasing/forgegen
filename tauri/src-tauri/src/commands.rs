@@ -294,9 +294,11 @@ async fn spawn_videoflow_streaming(
     });
 
     // Race: child finishes naturally vs. user clicks Cancel. On cancel we
-    // kill the child (SIGKILL on unix, TerminateProcess on Windows), drain
-    // the same downstream tasks the natural-exit path uses, and surface a
-    // sentinel error string the React side recognises as a user cancel
+    // kill the whole process tree (see kill_process_tree below — `cmd /C
+    // python.exe` means the direct child is cmd.exe, not python, and
+    // TerminateProcess on cmd doesn't cascade to its python child),
+    // drain the downstream tasks the natural-exit path uses, and surface
+    // a sentinel error string the React side recognises as a user cancel
     // (handlePick checks for "cancelled" and falls back to IDLE silently).
     let cancelled;
     let status = tokio::select! {
@@ -306,10 +308,8 @@ async fn spawn_videoflow_streaming(
         }
         _ = &mut cancel_rx => {
             cancelled = true;
-            let _ = child.kill().await;
-            // Reap so we don't leak a zombie. Any wait error here is moot —
-            // we already know the run is dead.
-            child.wait().await.ok();
+            let pid = child.id();
+            kill_process_tree(pid, &mut child).await;
             std::process::ExitStatus::default()
         }
     };
@@ -347,6 +347,41 @@ async fn spawn_videoflow_streaming(
         let preview: String = stdout.chars().take(200).collect();
         format!("JSON parse failed: {} — stdout preview: {}", e, preview)
     })
+}
+
+/// Force-kill a process tree given the root child handle.
+///
+/// On Windows we shell out to `taskkill /F /T /PID <pid>` because our spawn
+/// pattern is `cmd /C python.exe -u -m videoflow…`: the direct child is
+/// cmd.exe, and `TerminateProcess(cmd)` does NOT cascade to the python
+/// grandchild. Without this the python process keeps running orphaned,
+/// holds the stderr pipe open, and the bridge's stderr-drain task hangs
+/// forever waiting for EOF — the user-visible symptom is "Cancelling…"
+/// never resolving during long beats analysis.
+///
+/// On unix `child.kill()` is sufficient; we don't have the cmd shim there.
+/// In both cases we follow up with `child.wait()` so we don't leak a
+/// zombie entry, and `taskkill` failures are swallowed because the
+/// fallback (`child.kill()`) is already best-effort.
+async fn kill_process_tree(pid: Option<u32>, child: &mut tokio::process::Child) {
+    #[cfg(target_os = "windows")]
+    {
+        if let Some(pid) = pid {
+            let _ = tokio::process::Command::new("taskkill")
+                .args(["/F", "/T", "/PID", &pid.to_string()])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .await;
+        }
+        let _ = child.kill().await;
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = pid; // unused on unix
+        let _ = child.kill().await;
+    }
+    child.wait().await.ok();
 }
 
 /// Read new bytes from `path` starting at `offset`, append to `leftover`,
@@ -579,25 +614,26 @@ pub async fn generate_funscript(
     let parent = p
         .parent()
         .ok_or_else(|| format!("invalid media path (no parent): {}", path))?;
-    let out_path = parent.join(format!("{}.funscript", stem));
-    let out_str = out_path.to_string_lossy().to_string();
+    let final_path = parent.join(format!("{}.funscript", stem));
+    let final_str = final_path.to_string_lossy().to_string();
 
-    // Don't silently overwrite a previous funscript — rename it with a
-    // local-time timestamp so iterating on settings never destroys earlier
-    // generations. The canonical <stem>.funscript stays the latest so player
-    // auto-pairing keeps working.
-    if out_path.exists() {
-        let ts = chrono::Local::now().format("%Y-%m-%dT%H-%M-%S");
-        let backup = parent.join(format!("{}.funscript.{}.bak", stem, ts));
-        if let Err(e) = tokio::fs::rename(&out_path, &backup).await {
-            return Err(format!(
-                "failed to back up existing funscript {} → {}: {}",
-                out_path.display(),
-                backup.display(),
-                e
-            ));
-        }
-    }
+    // Write videoflow's output to a temp path next to the final destination
+    // and atomic-rename on success. The canonical `<stem>.funscript` stays
+    // untouched until the new run produces a valid file. This protects the
+    // Output tab from a vanishing file during long Generate runs and means
+    // a failed or cancelled run never destroys the prior result. Backup of
+    // the prior canonical (if any) happens AFTER the new file is ready,
+    // not before — see the publish step below.
+    let temp_path = parent.join(format!(
+        "{}.funscript.tmp.{}.{}",
+        stem,
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0)
+    ));
+    let temp_str = temp_path.to_string_lossy().to_string();
 
     let _ = options.emphasize_beats; // accepted for forward-compat; bundle path emits per row
 
@@ -649,7 +685,9 @@ pub async fn generate_funscript(
     };
 
     let bundle_str_opt = bundle_temp.as_ref().map(|p| p.to_string_lossy().to_string());
-    let mut args: Vec<&str> = vec!["generate-funscript", &path, &out_str];
+    // NOTE: videoflow gets the TEMP path, not the canonical. We swap them
+    // after success so the canonical never disappears mid-run.
+    let mut args: Vec<&str> = vec!["generate-funscript", &path, &temp_str];
     if let Some(ref bundle_path) = bundle_str_opt {
         args.extend_from_slice(&["--recipe-bundle", bundle_path]);
     } else {
@@ -671,25 +709,62 @@ pub async fn generate_funscript(
         let _ = tokio::fs::remove_file(&tmp).await;
     }
 
-    // User cancel beats resilience — see auto_chapter doc.
+    // User cancel beats resilience — clean up the temp file so a cancelled
+    // run leaves no detritus, and propagate the sentinel error.
     if matches!(&bridge_result, Err(e) if e == "cancelled") {
+        let _ = tokio::fs::remove_file(&temp_path).await;
         return Err("cancelled".to_string());
     }
 
-    // Resilience for Python atexit-cleanup exit codes (see auto_chapter
-    // doc): if the funscript was actually written, treat as success even
-    // when the bridge reports a non-zero exit. Only error when the file
-    // is missing.
-    if out_path.exists() {
-        if let Ok(value) = bridge_result {
-            return Ok(value);
+    // Did videoflow actually produce something at the temp path? (Resilience
+    // for Python atexit-cleanup exit codes — see auto_chapter doc: if the
+    // file was written, treat as success even when the bridge reports
+    // non-zero exit.) If yes, back up any prior canonical and publish.
+    if temp_path.exists() {
+        if final_path.exists() {
+            let ts = chrono::Local::now().format("%Y-%m-%dT%H-%M-%S");
+            let backup = parent.join(format!("{}.funscript.{}.bak", stem, ts));
+            if let Err(e) = tokio::fs::rename(&final_path, &backup).await {
+                // Couldn't back up — bail rather than overwrite. Leave the
+                // temp file in place so the user has it as a recovery option.
+                return Err(format!(
+                    "failed to back up existing funscript {} → {}: {} (new run is at {})",
+                    final_path.display(),
+                    backup.display(),
+                    e,
+                    temp_path.display()
+                ));
+            }
         }
-        // Synthesize a minimal result so React has something to render.
-        return Ok(serde_json::json!({
-            "output": out_str,
-            "synthesized": true,
-        }));
+        if let Err(e) = tokio::fs::rename(&temp_path, &final_path).await {
+            return Err(format!(
+                "failed to publish funscript {} → {}: {}",
+                temp_path.display(),
+                final_path.display(),
+                e
+            ));
+        }
+
+        // Patch the JSON's `output` so React sees the canonical path, not
+        // the temp one videoflow wrote. (videoflow returns whatever path
+        // it was given; we swapped that path before launching.)
+        let mut value = match bridge_result {
+            Ok(v) => v,
+            Err(_) => serde_json::json!({ "synthesized": true }),
+        };
+        if let Some(obj) = value.as_object_mut() {
+            obj.insert(
+                "output".to_string(),
+                serde_json::Value::String(final_str),
+            );
+        }
+        return Ok(value);
     }
+
+    // videoflow didn't write the temp file — clean up (no-op if it's truly
+    // not there) and surface the bridge error. The canonical funscript (if
+    // any) is untouched.
+    let _ = tokio::fs::remove_file(&temp_path).await;
     bridge_result
 }
 
@@ -801,4 +876,201 @@ pub async fn remove_recent(app: AppHandle, path: String) -> Result<(), String> {
     let items = load_recents(&recents).await;
     let filtered: Vec<RecentItem> = items.into_iter().filter(|i| i.path != path).collect();
     save_recents(&recents, filtered).await
+}
+
+// ---------------------------------------------------------------------------
+// Output tab — funscript inspector
+// ---------------------------------------------------------------------------
+
+/// Read a funscript JSON file from disk. The Output tab uses this to render
+/// the actions array (for the density-over-time chart) and the
+/// `metadata.generated_from` block (chapters + recipes + source partial-MD5).
+#[tauri::command]
+pub async fn read_funscript(path: String) -> Result<Value, String> {
+    let p = Path::new(&path);
+    let contents = tokio::fs::read_to_string(p)
+        .await
+        .map_err(|e| format!("read funscript {}: {}", p.display(), e))?;
+    serde_json::from_str(&contents)
+        .map_err(|e| format!("parse funscript {}: {}", p.display(), e))
+}
+
+/// Open the host OS file manager with `path` selected.
+///
+/// Windows uses `explorer.exe /select,"<path>"` — but Rust's `Command::arg`
+/// applies its own quoting rules that explorer.exe's quirky argv parser
+/// doesn't accept, so the standard call silently falls back to opening
+/// `C:\Users\<user>\Documents` whenever the path has spaces, parens, or
+/// other Windows-special characters. We bypass Rust's quoting with
+/// `raw_arg` (Windows-only) and pass the exact command-line explorer
+/// expects: `/select,"<path>"` as one literal token.
+///
+/// macOS uses `open -R`. Linux falls back to `xdg-open` on the parent
+/// directory (no portable per-file selection).
+#[tauri::command]
+pub async fn reveal_in_explorer(path: String) -> Result<(), String> {
+    let p = Path::new(&path);
+    if !p.exists() {
+        return Err(format!("not found: {}", path));
+    }
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        // raw_arg passes the string through verbatim — explorer.exe sees
+        // `/select,"C:\full\path with (special) chars.funscript"` and
+        // navigates to the right folder with the file highlighted.
+        let raw = format!("/select,\"{}\"", p.display());
+        std::process::Command::new("explorer.exe")
+            .raw_arg(&raw)
+            .spawn()
+            .map_err(|e| format!("explorer spawn: {}", e))?;
+        // explorer.exe returns non-zero even on success — fire-and-forget.
+        return Ok(());
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .args(["-R", &path])
+            .spawn()
+            .map_err(|e| format!("open spawn: {}", e))?;
+        return Ok(());
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let parent = p.parent().unwrap_or(p);
+        std::process::Command::new("xdg-open")
+            .arg(parent)
+            .spawn()
+            .map_err(|e| format!("xdg-open spawn: {}", e))?;
+        return Ok(());
+    }
+    #[allow(unreachable_code)]
+    Err("reveal_in_explorer: unsupported platform".into())
+}
+
+/// List the current canonical funscript and all `<stem>.funscript.<ts>.bak`
+/// versions next to a media file. Returned newest-first by mtime so the UI
+/// can render a version-switcher dropdown in the Output tab; the user can
+/// inspect the previous funscript even after a Regenerate without losing it
+/// to overwrite. Returns an empty list if neither the canonical nor any
+/// backups exist (rather than erroring).
+#[tauri::command]
+pub async fn list_funscript_versions(path: String) -> Result<Vec<FunscriptVersion>, String> {
+    let p = Path::new(&path);
+    let stem = p
+        .file_stem()
+        .ok_or_else(|| format!("invalid funscript path (no stem): {}", path))?
+        .to_string_lossy()
+        .to_string();
+    let parent = p
+        .parent()
+        .ok_or_else(|| format!("invalid funscript path (no parent): {}", path))?;
+    // The canonical itself ends in `.funscript`; the backups end in
+    // `.funscript.<ts>.bak`. Strip a trailing `.funscript` from the stem if
+    // the caller passed a backup path, so both forms produce the same set.
+    let canonical_stem = stem.strip_suffix(".funscript").unwrap_or(&stem).to_string();
+    let canonical = parent.join(format!("{}.funscript", canonical_stem));
+    let bak_prefix = format!("{}.funscript.", canonical_stem);
+
+    let mut entries = tokio::fs::read_dir(parent)
+        .await
+        .map_err(|e| format!("read_dir {}: {}", parent.display(), e))?;
+
+    let mut out: Vec<FunscriptVersion> = Vec::new();
+    while let Ok(Some(entry)) = entries.next_entry().await {
+        let name = entry.file_name().to_string_lossy().to_string();
+        let entry_path = entry.path();
+        let is_canonical = entry_path == canonical;
+        let is_backup = name.starts_with(&bak_prefix) && name.ends_with(".bak");
+        if !is_canonical && !is_backup {
+            continue;
+        }
+        let meta = match entry.metadata().await {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+        let mtime_secs = meta
+            .modified()
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        out.push(FunscriptVersion {
+            path: entry_path.to_string_lossy().to_string(),
+            is_current: is_canonical,
+            mtime_secs,
+            label: if is_canonical {
+                "current".to_string()
+            } else {
+                // Pull the timestamp segment between `.funscript.` and `.bak`
+                // for a clean dropdown label. Falls back to the filename if
+                // the suffix isn't where we expect.
+                name.strip_prefix(&bak_prefix)
+                    .and_then(|s| s.strip_suffix(".bak"))
+                    .map(|s| s.to_string())
+                    .unwrap_or(name)
+            },
+        });
+    }
+    out.sort_by(|a, b| b.mtime_secs.cmp(&a.mtime_secs));
+    Ok(out)
+}
+
+#[derive(serde::Serialize)]
+pub struct FunscriptVersion {
+    pub path: String,
+    pub is_current: bool,
+    pub mtime_secs: u64,
+    pub label: String,
+}
+
+/// Copy a funscript file from `src` to `dst`. The Output tab's Save-as
+/// workflow calls this after the user picks the destination via the dialog
+/// plugin. Overwrites `dst` if it exists — the picker has already prompted
+/// the user about that.
+///
+/// Guards against the "user clicked Save without changing the filename"
+/// case: copying a file onto itself on Windows fails with a file-locked
+/// error from `tokio::fs::copy` (os error 32, "being used by another
+/// process") and isn't a meaningful operation anyway. We compare canonical
+/// paths so casing/separator differences don't fool the check.
+#[tauri::command]
+pub async fn save_funscript_copy(src: String, dst: String) -> Result<(), String> {
+    let s = Path::new(&src);
+    let d = Path::new(&dst);
+    if !s.exists() {
+        return Err(format!("source not found: {}", src));
+    }
+    if paths_point_to_same_file(s, d) {
+        return Err(
+            "Source and destination are the same file. Save-as creates a \
+             copy at a different location — pick a different filename or folder."
+                .into(),
+        );
+    }
+    tokio::fs::copy(s, d)
+        .await
+        .map_err(|e| format!("copy {} -> {}: {}", s.display(), d.display(), e))?;
+    Ok(())
+}
+
+/// Best-effort same-file check. Uses `canonicalize` when both sides exist
+/// (handles symlinks, different separators, casing on case-insensitive FS).
+/// Falls back to a normalised string comparison if either side hasn't been
+/// created yet (the destination usually hasn't).
+fn paths_point_to_same_file(a: &Path, b: &Path) -> bool {
+    if let (Ok(ca), Ok(cb)) = (a.canonicalize(), b.canonicalize()) {
+        return ca == cb;
+    }
+    // The destination won't exist yet on a brand-new save-as. Compare the
+    // parent's canonical path + filename instead. Falls through to a raw
+    // string compare if even the parents are inscrutable.
+    if let (Some(pa), Some(pb), Some(na), Some(nb)) =
+        (a.parent(), b.parent(), a.file_name(), b.file_name())
+    {
+        if let (Ok(cpa), Ok(cpb)) = (pa.canonicalize(), pb.canonicalize()) {
+            return cpa == cpb && na == nb;
+        }
+    }
+    a == b
 }

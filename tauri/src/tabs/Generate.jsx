@@ -23,7 +23,12 @@ import PerChapterForm, {
   STYLE_OPTIONS,
 } from '../components/generate/PerChapterForm.jsx';
 import Stepper from '../components/common/Stepper.jsx';
-import { generateFunscript, isTauri } from '../api/videoflow.js';
+import {
+  cancelGenerateFunscript,
+  generateFunscript,
+  isCancelled,
+  isTauri,
+} from '../api/videoflow.js';
 import { fmtTime } from '../lib/analysis.js';
 import { TARGETS, getTarget } from '../lib/targets.js';
 
@@ -34,10 +39,15 @@ const DEFAULT_TARGET_ID = 'keon';
 // into a 5-step stepper. The three synthesis steps (curve/classify/shape)
 // fold into one "Synth" step because they're all fast and feel like one
 // unit to the user.
+//
+// `Analyzing chapter N/M` belongs to Beats — videoflow.audio runs analyse
+// per chapter when chapters are supplied (recipe-bundle path always does
+// this), so on long files the Beats stage shows live chapter-index detail
+// rather than looking frozen.
 const GENERATE_STAGES = [
   { id: 'extract', label: 'Extract', match: /Extracting audio/i },
   { id: 'load', label: 'Load', match: /Loading audio/i },
-  { id: 'beats', label: 'Beats', match: /Separating percussive|Tracking beats|HPSS/i },
+  { id: 'beats', label: 'Beats', match: /Separating percussive|Tracking beats|HPSS|Analyzing chapter|Detecting beats|Computing phrases/i },
   { id: 'synth', label: 'Synth', match: /Generating motion curve|Classifying phrase modes|Shaping curve/i },
   { id: 'write', label: 'Write', match: /Writing funscript/i },
 ];
@@ -246,7 +256,25 @@ function PerChapterCaveat({ count }) {
   );
 }
 
-function ResultPanel({ result, mediaPath }) {
+// Recipes can vary per chapter, but `source` (audio mix) is global per run
+// because audio is loaded once at analyse time. Summarise as
+// "Style · density-or-mixed · shape-or-mixed" so the user sees what's
+// actually about to run without having to scroll back to the grid.
+function recipeSummaryLabel(recipes) {
+  if (!recipes || recipes.length === 0) return null;
+  const head = recipes[0];
+  const allSame = (field) => recipes.every((r) => r[field] === head[field]);
+  const styleLabel = STYLE_OPTIONS.find((o) => o.value === head.style)?.label.split(' — ')[0] || head.style;
+  const densityLabel = allSame('density')
+    ? DENSITY_OPTIONS.find((o) => o.value === head.density)?.label.split(' — ')[0] || head.density
+    : 'mixed';
+  const shapeLabel = allSame('shape')
+    ? SHAPE_OPTIONS.find((o) => o.value === head.shape)?.label.split(' — ')[0] || head.shape
+    : 'mixed';
+  return `Style: ${styleLabel} · Density: ${densityLabel} · Shape: ${shapeLabel}`;
+}
+
+function ResultPanel({ result, mediaPath, recipeSummary }) {
   return (
     <div
       style={{
@@ -300,6 +328,9 @@ function ResultPanel({ result, mediaPath }) {
           <span style={{ color: 'var(--muted)' }}>duration:</span>{' '}
           {fmtTime(result.duration_ms ?? 0)}
         </div>
+        {recipeSummary && (
+          <div style={{ color: 'var(--muted)' }}>{recipeSummary}</div>
+        )}
         {mediaPath && (
           <div style={{ wordBreak: 'break-all', marginTop: 4 }}>
             <span style={{ color: 'var(--muted)' }}>source:</span>{' '}
@@ -311,7 +342,7 @@ function ResultPanel({ result, mediaPath }) {
   );
 }
 
-export default function Generate({ sidecar, mediaPath }) {
+export default function Generate({ sidecar, mediaPath, onFunscriptReady, onSwitchToOutput }) {
   const initialTarget = getTarget(DEFAULT_TARGET_ID);
   const initialRecipe = {
     ...DEFAULT_RECIPE,
@@ -328,6 +359,11 @@ export default function Generate({ sidecar, mediaPath }) {
   const [error, setError] = useState(null);
   const [stage, setStage] = useState(null);
   const [stageId, setStageId] = useState(null);
+  // Set when the user clicks Cancel. The bridge call can take a beat to
+  // tear down the videoflow subprocess; this flag puts the Cancel button
+  // into a "Cancelling…" state so the click feels acknowledged even before
+  // the promise settles.
+  const [cancelling, setCancelling] = useState(false);
   // Ref on the busy/result block — when generation kicks off we
   // scrollIntoView so the progress bar is visible without manual scroll.
   // The author UI (chapter rows + bulk controls) easily exceeds one
@@ -390,6 +426,7 @@ export default function Generate({ sidecar, mediaPath }) {
     setResult(null);
     setStage(null);
     setStageId(null);
+    setCancelling(false);
     setPhase(PHASES.GENERATING);
     try {
       const out = await generateFunscript(mediaPath, sendOptions, (label) => {
@@ -399,9 +436,37 @@ export default function Generate({ sidecar, mediaPath }) {
       });
       setResult(out);
       setPhase(PHASES.DONE);
+      // Lift the result up so the Output tab can inspect it. Without this
+      // the Output tab gate stays disabled even after a successful run.
+      if (typeof onFunscriptReady === 'function') {
+        try { onFunscriptReady(out); } catch { /* never break the run */ }
+      }
     } catch (err) {
-      setError(String(err));
-      setPhase(PHASES.ERROR);
+      // User-initiated cancel returns to idle silently — not an error to
+      // show in red. The bridge sentinel "cancelled" is wrapped by Tauri's
+      // binding so we match with isCancelled (substring check).
+      if (isCancelled(err)) {
+        setPhase(PHASES.IDLE);
+        setStage(null);
+        setStageId(null);
+      } else {
+        setError(String(err));
+        setPhase(PHASES.ERROR);
+      }
+    } finally {
+      setCancelling(false);
+    }
+  }
+
+  async function handleCancel() {
+    if (cancelling) return;
+    setCancelling(true);
+    try {
+      await cancelGenerateFunscript();
+    } catch {
+      // Cancel is best-effort — if the bridge is already winding down or
+      // the cancel registry has no entry, the in-flight Generate promise
+      // will resolve or reject on its own. No user-facing error needed.
     }
   }
 
@@ -487,13 +552,14 @@ export default function Generate({ sidecar, mediaPath }) {
         {/* 5. v0.1 caveat */}
         {PerChapterCaveat({ count: sidecar.chapters.length })}
 
-        {/* 6. Generate CTA + status */}
+        {/* 6. Generate CTA — role-swaps by phase. Idle/Error → Generate.
+            Busy → Cancel. Done → View Output (primary) + Regenerate (link). */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'flex-end',
             alignItems: 'center',
-            gap: 10,
+            gap: 14,
           }}
         >
           {!isTauri() && (
@@ -501,26 +567,89 @@ export default function Generate({ sidecar, mediaPath }) {
               Browser mode — generation will return mock data.
             </span>
           )}
-          <button
-            onClick={handleGenerate}
-            disabled={busy}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '12px 22px',
-              background: busy ? 'var(--bg)' : 'var(--accent)',
-              border: '1px solid var(--accent)',
-              borderRadius: 8,
-              color: busy ? 'var(--muted)' : '#0c0d10',
-              fontFamily: 'inherit',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: busy ? 'wait' : 'pointer',
-            }}
-          >
-            {busy ? 'Generating…' : 'Generate funscript →'}
-          </button>
+          {phase === PHASES.DONE && (
+            <button
+              onClick={handleGenerate}
+              style={{
+                padding: '6px 0',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--muted)',
+                fontFamily: 'inherit',
+                fontSize: 12,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+              title="Run Generate again — current funscript is backed up first"
+            >
+              Regenerate
+            </button>
+          )}
+          {busy ? (
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '12px 22px',
+                background: 'transparent',
+                border: '1px solid var(--warning, #ff8c42)',
+                borderRadius: 8,
+                color: 'var(--warning, #ff8c42)',
+                fontFamily: 'inherit',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: cancelling ? 'wait' : 'pointer',
+                opacity: cancelling ? 0.6 : 1,
+              }}
+              title="Stop the in-flight videoflow run and return to the editor"
+            >
+              {cancelling ? 'Cancelling…' : 'Cancel'}
+            </button>
+          ) : phase === PHASES.DONE ? (
+            <button
+              onClick={() => onSwitchToOutput && onSwitchToOutput()}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '12px 22px',
+                background: 'var(--accent)',
+                border: '1px solid var(--accent)',
+                borderRadius: 8,
+                color: '#0c0d10',
+                fontFamily: 'inherit',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+              title="Open the Output tab to inspect, save, or reveal the funscript"
+            >
+              View Output ↗
+            </button>
+          ) : (
+            <button
+              onClick={handleGenerate}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '12px 22px',
+                background: 'var(--accent)',
+                border: '1px solid var(--accent)',
+                borderRadius: 8,
+                color: '#0c0d10',
+                fontFamily: 'inherit',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Generate funscript →
+            </button>
+          )}
         </div>
 
         {/* 7. Status / error / result */}
@@ -551,6 +680,11 @@ export default function Generate({ sidecar, mediaPath }) {
               />
               Running videoflow generate-funscript…
             </div>
+            {recipeSummaryLabel(recipes) && (
+              <div style={{ color: 'var(--fg)', fontSize: 12 }}>
+                {recipeSummaryLabel(recipes)}
+              </div>
+            )}
             <Stepper
               stages={GENERATE_STAGES}
               currentStageId={stageId}
@@ -574,7 +708,11 @@ export default function Generate({ sidecar, mediaPath }) {
         )}
 
         {result && phase === PHASES.DONE && (
-          <ResultPanel result={result} mediaPath={mediaPath} />
+          <ResultPanel
+            result={result}
+            mediaPath={mediaPath}
+            recipeSummary={recipeSummaryLabel(recipes)}
+          />
         )}
       </div>
 

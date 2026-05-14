@@ -28,6 +28,10 @@ pub fn run() {
             commands::add_recent,
             commands::remove_recent,
             commands::cancel_run,
+            commands::read_funscript,
+            commands::reveal_in_explorer,
+            commands::save_funscript_copy,
+            commands::list_funscript_versions,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

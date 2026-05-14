@@ -211,7 +211,7 @@ export default function Analysis({ sidecar, onContinue }) {
               cursor: 'pointer',
             }}
           >
-            Generate funscript →
+            Build Funscript →
           </button>
         </div>
 
