@@ -1,7 +1,7 @@
 # Analyze → Generate → Export tabs (PySide6 design)
 
 > **Status:** design proposal for the PySide6 forgegen rebuild. Replaces
-> the Streamlit "Generate / Details" two-tab shape with **Analyze →
+> the legacy "Generate / Details" two-tab shape with **Analyze →
 > Generate → Export** linear tabs. The shell is fresh; this doc is the
 > locking reference for what those tabs do, what they show, and where
 > their data lives.

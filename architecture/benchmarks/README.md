@@ -46,7 +46,7 @@ cp testcases/long_form_benchmark/results/results.jsonl \
 
 `<label>` should describe the algorithmic change ("track_b_initial",
 "chapter_aware_v1", etc.). The harness `run_benchmark.py` is intentionally
-kept in lockstep with `panels/generate.py` — when the app's `beats_to_curve`
+kept in lockstep with `tauri/src/components/generate/PerChapterForm.jsx` and the bridge generation path — when the app's `beats_to_curve`
 call signature changes, the harness changes too, so snapshots compare
 apples-to-apples.
 

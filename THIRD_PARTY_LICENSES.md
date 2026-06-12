@@ -16,21 +16,21 @@ Packaged releases of ForgeGen bundle third-party software that retains its own l
 - **Used for:** video / audio processing where applicable.
 - **Packaged releases** include a copy of the applicable ffmpeg license alongside the `ffmpeg` executable in the distribution.
 
+## Desktop UI dependencies
+
+### Tauri
+
+- **License:** MIT / Apache-2.0
+- **Project:** [tauri.app](https://tauri.app)
+- **Used for:** the native desktop shell and bridge around the React ForgeGen UI.
+
+### React
+
+- **License:** MIT
+- **Project:** [react.dev](https://react.dev)
+- **Used for:** the ForgeGen desktop UI.
+
 ## Python dependencies
-
-### Streamlit
-
-- **License:** Apache License 2.0
-- **Project:** [streamlit.io](https://streamlit.io)
-- **License text:** [github.com/streamlit/streamlit/blob/develop/LICENSE](https://github.com/streamlit/streamlit/blob/develop/LICENSE)
-- **Used for:** the application UI framework.
-
-### pywebview
-
-- **License:** BSD 3-Clause
-- **Project:** [pywebview.flowrl.com](https://pywebview.flowrl.com)
-- **License text:** [github.com/r0x0r/pywebview/blob/master/LICENSE](https://github.com/r0x0r/pywebview/blob/master/LICENSE)
-- **Used for:** the native desktop window wrapper around the Streamlit UI and the HTTP bridge for native folder/file pickers.
 
 ### imageio-ffmpeg
 
@@ -80,4 +80,4 @@ Packaged releases of ForgeGen bundle third-party software that retains its own l
 
 ## Transitive dependencies
 
-ForgeGen's packaged releases also bundle many transitive dependencies of the packages listed above (altair, pyarrow, tornado, click, rich, watchdog, and others pulled in by Streamlit). These retain their own licenses; see the `dist-info` directories alongside the executable for the full set.
+ForgeGen's packaged releases also bundle transitive dependencies of the packages listed above. These retain their own licenses; see the bundled dependency metadata alongside the executable for the full set.

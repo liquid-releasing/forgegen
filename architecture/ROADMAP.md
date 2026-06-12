@@ -175,7 +175,7 @@ YOLO and MediaPipe are general-purpose object detectors. For adult video, neithe
 "Open in FunsriptForge" is mentioned everywhere but never specced. File path? Named pipe? Shared temp folder? API call? This is a coordination decision between two products. **It needs a written spec before building either side of the integration.**
 
 ### 6. Distribution / installer
-How does a user get forgegen? The spec says nothing about packaging. Electron/Tauri desktop app? Streamlit served locally? Python package? Windows installer? **The answer shapes the entire UI architecture.**
+How does a user get forgegen? The answer is now the Tauri desktop app, backed by the videoflow Python engine. Packaging targets still need release work.
 
 ### 7. Training data pipeline for ML models
 The ML models need 500–2000 labeled expert scripts. The spec doesn't say where these come from, who labels them, or what the labeling tool looks like. Without labeled data, the ML models can't be trained. **This is a content/community problem, not an engineering one, and it's not addressed anywhere.**
@@ -204,7 +204,7 @@ How do you know a generated funscript is good? The spec has QA/validation for te
 1. `analyze_beats()` — already built
 2. beats + energy → motion curve — ~100 lines of NumPy
 3. motion curve → funscript JSON — ~50 lines
-4. file-drop UI — ~200 lines Streamlit
+4. file-drop UI — Tauri + React media project opener
 
 The full pipeline — RAFT optical flow, MoveNet, pattern clustering, ML models, LLM layer — is the right long-term architecture. But the 9-stage video spec is engineering for the 2-year vision, not the 2-week demo.
 

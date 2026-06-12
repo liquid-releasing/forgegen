@@ -169,7 +169,7 @@ forgegen's own export step already validates and sorts actions — this is an ex
 
 ## Headless operation
 
-forgegen requires no display. The Streamlit UI is optional. The library and CLI run headless on any machine:
+forgegen requires no display for automation. The Tauri UI is optional; the library and CLI run headless on any machine:
 
 - Remote Linux server (no display needed)
 - NAS or home server

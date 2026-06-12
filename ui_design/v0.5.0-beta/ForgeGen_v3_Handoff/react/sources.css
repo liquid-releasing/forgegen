@@ -1,0 +1,172 @@
+/* sources.css — ForgeGen v3 "Sources" stage.
+ * Layered on top of tokens.css (which defines --accent, --info, --surface, …).
+ * Per-source accent is passed in via the inline custom property `--src`. */
+
+.fg-sources { flex: 1; min-height: 0; display: flex; flex-direction: row; overflow: hidden; }
+.fg-sources__main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: auto; }
+.fg-sources__inner { padding: 20px 24px 16px; }
+
+/* ── Section label ─────────────────────────────────────────── */
+.fg-seclabel {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10.5px; font-weight: 700; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.1em; margin: 4px 0 10px;
+}
+.fg-seclabel__hint { color: var(--text-dim); text-transform: none; letter-spacing: 0; font-weight: 500; }
+
+/* ── Acquire banner ────────────────────────────────────────── */
+.fg-acquire {
+  border-radius: 12px; padding: 16px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 16px;
+  border: 1px solid var(--info);
+  background:
+    radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--info) 12%, transparent) 0%, transparent 60%),
+    var(--surface);
+}
+.fg-acquire__icon {
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--info) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--info) 40%, transparent);
+  color: var(--info);
+}
+.fg-acquire__title { font-size: 13.5px; font-weight: 700; }
+.fg-acquire__body { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; line-height: 1.45; }
+.fg-acquire__bar { margin-top: 8px; height: 5px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.fg-acquire__fill { height: 100%; background: var(--info); transition: width 120ms linear; }
+
+/* ── Source-mix ribbon ─────────────────────────────────────── */
+.fg-ribbon { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+.fg-ribbon__row { display: flex; height: 40px; position: relative; }
+.fg-ribbon__seg {
+  min-width: 0; position: relative; display: flex; align-items: center;
+  justify-content: center; gap: 4px; color: #fff;
+  background: color-mix(in srgb, var(--src) 78%, transparent);
+  border-right: 1px solid rgba(0,0,0,0.4);
+}
+.fg-ribbon__seg:last-child { border-right: none; }
+.fg-ribbon__seam {
+  position: absolute; left: -1px; top: 0; bottom: 0; width: 2px;
+  background: repeating-linear-gradient(180deg, var(--accent-spark) 0 3px, transparent 3px 6px);
+}
+
+/* ── Bulk bar ──────────────────────────────────────────────── */
+.fg-bulk {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.fg-bulk__label {
+  font-size: 11px; font-weight: 700; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.fg-bulk__divider { width: 1px; height: 18px; background: var(--border); }
+.fg-bulk__mix { margin-left: auto; font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); }
+
+/* ── Compare card ──────────────────────────────────────────── */
+.fg-card {
+  border-radius: 12px; padding: 14px; background: var(--surface);
+  border: 1px solid var(--border); border-left: 4px solid var(--ch);
+  transition: border-color 150ms, outline 150ms;
+}
+.fg-card + .fg-card { margin-top: 12px; }
+.fg-card--focused { border-color: var(--src); outline: 2px solid color-mix(in srgb, var(--src) 28%, transparent); outline-offset: 2px; }
+.fg-card__head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.fg-card__num { font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-dim); }
+.fg-card__name { font-size: 14px; font-weight: 700; }
+.fg-card__using {
+  margin-left: auto; display: flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: 999px; color: var(--src);
+  background: color-mix(in srgb, var(--src) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--src) 40%, transparent);
+  font-size: 11px; font-weight: 700;
+}
+.fg-card__panels { display: flex; gap: 10px; }
+
+/* ── Candidate panel ───────────────────────────────────────── */
+.fg-cand {
+  flex: 1; min-width: 0; text-align: left; font-family: inherit; cursor: pointer;
+  display: flex; flex-direction: column; gap: 8px; padding: 11px; border-radius: 10px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  transition: background 140ms, border-color 140ms, box-shadow 140ms;
+}
+.fg-cand--selected {
+  background: var(--surface); border-color: var(--src);
+  box-shadow: 0 0 0 1px var(--src), 0 0 14px color-mix(in srgb, var(--src) 22%, transparent);
+}
+.fg-cand__head { display: flex; align-items: center; gap: 7px; }
+.fg-cand__icon {
+  width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; flex-shrink: 0;
+  color: var(--src);
+  background: color-mix(in srgb, var(--src) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--src) 38%, transparent);
+}
+.fg-cand__label { font-size: 12px; font-weight: 700; color: var(--text); }
+.fg-badge {
+  font-family: var(--font-mono); font-size: 8.5px; padding: 1px 5px; border-radius: 3px;
+  background: var(--warm-glow); color: var(--accent-warm-2); border: 1px solid var(--accent-warm);
+}
+.fg-cand__check {
+  margin-left: auto; width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+  display: grid; place-items: center; color: #fff;
+  border: 1.5px solid var(--border-strong); background: transparent;
+}
+.fg-cand--selected .fg-cand__check { border-color: var(--src); background: var(--src); }
+.fg-cand__why { margin: 0; font-size: 10.5px; line-height: 1.4; color: var(--text-muted); }
+.fg-cand__trust { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; color: var(--text); }
+.fg-cand__trust span { font-family: var(--font-mono); font-weight: 400; font-size: 9.5px; color: var(--text-dim); }
+.fg-cand--dim .fg-mini, .fg-cand--dim .fg-conf { opacity: 0.45; }
+
+/* ── Mini funscript curve ──────────────────────────────────── */
+.fg-mini {
+  height: 58px; border-radius: 6px; overflow: hidden; position: relative;
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.fg-mini--empty { display: grid; place-items: center; border-style: dashed; }
+.fg-mini--empty span { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); }
+.fg-mini svg { position: absolute; inset: 0; }
+.fg-mini__line { fill: none; stroke: var(--src); stroke-width: 1.1; stroke-linejoin: round; stroke-linecap: round;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--src) 60%, transparent)); }
+.fg-mini__base { stroke: rgba(255,255,255,0.06); stroke-width: 0.4; }
+
+/* ── Confidence bar ────────────────────────────────────────── */
+.fg-conf { display: flex; align-items: center; gap: 8px; }
+.fg-conf__track { flex: 1; height: 5px; background: var(--surface-3); border-radius: 3px; overflow: hidden; }
+.fg-conf__fill { height: 100%; background: var(--src); box-shadow: 0 0 6px color-mix(in srgb, var(--src) 55%, transparent); }
+.fg-conf__pct { font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text); min-width: 30px; text-align: right; }
+
+/* ── Inspector ─────────────────────────────────────────────── */
+.fg-insp {
+  width: var(--inspector-w); flex-shrink: 0; border-left: 1px solid var(--border);
+  background: var(--surface); display: flex; flex-direction: column; overflow: hidden;
+}
+.fg-insp__head { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.fg-insp__eyebrow { font-size: 9.5px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+.fg-insp__title { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.fg-insp__swatch { width: 4px; height: 22px; border-radius: 2px; background: var(--ch); }
+.fg-insp__name { font-size: 16px; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fg-insp__chip {
+  margin-top: 8px; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+  color: var(--src);
+  background: color-mix(in srgb, var(--src) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--src) 38%, transparent);
+}
+.fg-insp__body { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.fg-insp__section-label { font-size: 9.5px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+.fg-insp__downstream { display: flex; gap: 8px; padding: 10px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); }
+.fg-insp__downstream span { font-size: 10.5px; color: var(--text-muted); line-height: 1.5; }
+
+/* ── Generic small button (Audio/Video quick-select etc.) ──── */
+.fg-btn {
+  display: inline-flex; align-items: center; gap: 6px; justify-content: center;
+  padding: 6px 10px; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  transition: background 120ms, border-color 120ms;
+}
+.fg-btn:hover { border-color: var(--accent); background: var(--accent-glow-soft); }
+.fg-btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.fg-btn--ghost { background: transparent; color: var(--text-muted); border-color: transparent; }
+.fg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* spinner — @keyframes fg-spin is defined in tokens.css */
+.fg-spin { animation: fg-spin 1s linear infinite; }

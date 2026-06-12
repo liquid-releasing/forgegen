@@ -73,9 +73,9 @@ forgegen's React rewrite must enforce these at the component level.
 
 ## Scrap — PySide6-specific, do not carry
 
-- All of `forgegen/panels/` (Qt widget classes — `panels/generate.py`, `panels/details.py`, `panels/analyze.py`)
+- Retired legacy UI code under `forgegen/panels/` (removed from `main`; historical branch only)
 - Qt MVC signal/slot wiring
-- `app.py` Streamlit baseline (the v0.0.4 starter)
+- Retired `app.py` baseline (historical branch only)
 - Qt timeline widget implementations (use forge-reusable-ui's Charts components in React instead)
 - PyInstaller bundle strategy (`ForgeGen.spec`) — Tauri replaces this
 - `forgegen_core/` UI-bound bits — keep only the parts that are pure analysis/business logic if any survive; most of this is being replaced by `videoflow` calls anyway

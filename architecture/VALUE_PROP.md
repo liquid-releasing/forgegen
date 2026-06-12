@@ -62,7 +62,7 @@ FunScriptForge users are expert editors who polish and refine scripts. Many want
 
 **Mode-aware shaping.** forgegen doesn't just map beats to positions. It classifies each phrase — break, tease, slow, steady, fast, edging — and shapes the curve accordingly. A tease phrase has narrow amplitude and restrained peaks. An edging phrase builds progressively from 50% to full range. A drop hits at maximum energy. The result feels written, not generated.
 
-**Library-first architecture.** The generation engine (`videoflow.generate`) is a standalone Python library. The Streamlit UI is ~300 lines because all logic lives in the library. This means forgegen can be embedded in FunScriptForge, run headless in a batch pipeline, or called from any Python script.
+**Library-first architecture.** The generation engine (`videoflow.generate`) is a standalone Python library behind the Tauri desktop shell. This means forgegen can be embedded in FunscriptForge, run headless in a batch pipeline, or called from any Python script.
 
 **Audio-only is a complete product.** No video required, no GPU required, no cloud API required. forgegen ships a working product today on the audio path while the video pipeline matures.
 

@@ -16,8 +16,8 @@ editing.
 > Sidecar) lights up dot-by-dot during auto-chapter and Generate runs,
 > with ffmpeg sub-stage timecodes during long extracts. Pick file →
 > analyse → review chapters/phrases → author per-chapter recipes with
-> target preset → generate funscript. The legacy Streamlit codebase
-> lives on the `legacy-streamlit` branch. See
+> target preset → generate funscript. Tauri + React is the only supported
+> desktop UI in this repo. See
 > [REFACTOR_TO_TAURI_REACT.md](REFACTOR_TO_TAURI_REACT.md) and
 > [BRIDGE_DESIGN.md](BRIDGE_DESIGN.md) for the new architecture.
 
@@ -68,7 +68,7 @@ The chapter sidecar is shared across the lqr toolchain. ForgePlayer uses it for 
 ## Stack
 
 ```text
-forgegen          (this repo — Streamlit UI)
+forgegen          (this repo — Tauri + React desktop UI)
   └── videoflow   (generation engine — beats, classification, curve shaping, funscript export)
         └── librosa / FFmpeg
 ```
@@ -82,13 +82,13 @@ forgegen          (this repo — Streamlit UI)
 git clone https://github.com/liquid-releasing/forgegen.git
 git clone https://github.com/liquid-releasing/videoflow.git
 
-cd forgegen
-pip install -r requirements.txt
-
-streamlit run app.py
+cd forgegen/tauri
+npm install
+npm run tauri:dev
 ```
 
-Open `http://localhost:8501`. Drop in an audio file. Pick a style. Generate.
+Open the launched desktop window. Pick an audio/video file, review analysis,
+choose sources and recipes, then generate.
 
 ### CLI (via videoflow)
 

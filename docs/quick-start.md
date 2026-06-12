@@ -26,7 +26,9 @@ pip install -r requirements.txt
 ## 2. Launch the UI
 
 ```bash
-streamlit run app.py
+cd tauri
+npm install
+npm run tauri:dev
 ```
 
 Your browser opens at `http://localhost:8501`.

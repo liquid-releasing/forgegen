@@ -86,12 +86,12 @@ For audio-only sources without authored chapters, forgegen emits
 
 #### Where the writer lives
 
-The funscript-export path in [`panels/generate.py`](../../panels/generate.py)
+The funscript-export path in the Tauri bridge (`tauri/src-tauri/src/commands.rs`)
 has two branches:
 
 - **`Save to folder`** (line ~625) — writes `<stem>.funscript` to the user's
   output dir. Add: `<stem>.analysis.json` adjacent.
-- **`Download`** (line ~636) — Streamlit browser download. Cannot easily ship
+- **Save/copy actions** — Tauri native file operations. Browser download is not the primary desktop path.
   a sidecar through `download_button`. **Phase 1 caveat:** browser download
   carries the funscript only; users who download (rather than save) lose the
   analysis.json. Acceptable trade-off for v0.1.
@@ -153,7 +153,7 @@ and we have a sense of where field shapes need divergence vs. convergence.
 ## Implementation checklist (v0.1)
 
 - [ ] Confirm `videoflow` is on forgegen's import path (add to requirements if not)
-- [ ] In `panels/generate.py` "Save to folder" branch: call `videoflow.chapters.load_chapters(source)`, build minimal analysis.json dict, write next to funscript
+- [ ] In the Tauri generate path: call `videoflow.chapters.load_chapters(source)`, build minimal analysis.json dict, write next to funscript
 - [ ] Map `videoflow.chapters.Chapter` → `structural.chapter_proposals[]` shape (per schema: `start_ms`, `end_ms`, `intent_proposal`, `confidence`, `evidence`)
 - [ ] Compute `source.audio_md5` (decide partial-vs-full hashing)
 - [ ] Test: video with embedded chapters → sidecar contains them

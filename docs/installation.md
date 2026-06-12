@@ -49,7 +49,7 @@ Install the essentials build via winget:
 winget install Gyan.FFmpeg.Essentials
 ```
 
-Then **restart your terminal** (and Streamlit if it is already running) so the updated PATH takes effect.
+Then **restart your terminal** (and the Tauri dev server if it is already running) so the updated PATH takes effect.
 
 To verify:
 
@@ -117,7 +117,9 @@ ffmpeg -version
 
 ```bash
 cd forgegen
-streamlit run app.py
+cd tauri
+npm install
+npm run tauri:dev
 ```
 
 Open [http://localhost:8501](http://localhost:8501) in your browser.
@@ -126,7 +128,7 @@ Open [http://localhost:8501](http://localhost:8501) in your browser.
 
 ## CLI only (no UI)
 
-If you only need the CLI and don't want to install Streamlit:
+If you only need the CLI and don't want to run the desktop app:
 
 ```bash
 pip install -e ../videoflow[audio]

@@ -44,7 +44,7 @@ flowchart LR
     A9 --> FSF([FunScriptForge\nor direct export])
 ```
 
-**What's built:** beat detection, BPM, onsets, energy, HPSS percussive separation (`analyze_beats()` in videoflow); raw motion curve, mode classification, curve shaping, funscript JSON export (`videoflow.generate`); Streamlit UI (`forgegen/app.py`, `panels/generate.py`, `panels/details.py`).
+**What's built:** beat detection, BPM, onsets, energy, HPSS percussive separation (`analyze_beats()` in videoflow); raw motion curve, mode classification, curve shaping, funscript JSON export (`videoflow.generate`); Tauri + React desktop UI (`tauri/`).
 **What remains on this path:** estim audio → funscript; preview/playback during generation.
 
 ---
@@ -194,9 +194,9 @@ forgegen
 | Funscript JSON export | `videoflow.generate.export_funscript()` |
 | Convenience pipeline wrapper | `videoflow.generate.generate_from_beats()` |
 | CLI command | `videoflow generate-funscript` |
-| Streamlit UI — Generate tab | `forgegen/panels/generate.py` |
-| Streamlit UI — Details tab | `forgegen/panels/details.py` |
-| Style presets (Rhythmic / Sensual / Intense / Chaotic) | `forgegen/panels/generate.py` |
+| Tauri UI — Project / Analysis / Sources / Generate / Output | `tauri/src/` |
+| Visual recipe controls | `tauri/src/components/generate/PerChapterForm.jsx` |
+| Style presets (percussive / full mix) | `tauri/src/components/generate/PerChapterForm.jsx` |
 | Energy heatmap + funscript curve preview | plotly, both panels |
 
 ### Remaining — Audio path 🔲
@@ -304,6 +304,6 @@ forgegen
 
 8. **The "easy button" scope** — How much should V1 expose? Full controls or just style cards + generate? Too many options will kill the 30-second demo experience.
 
-9. **Distribution** — Desktop app (Electron/Tauri) for Windows, Mac and Linux as close as possible. Python package + Streamlit UI? Not a Web app. Docs are in web.
+9. **Distribution** — Tauri desktop app for Windows, Mac and Linux as close as possible. The core engine remains available through videoflow for CLI/batch automation.
 
 10. **Relationship to FunscriptFlow / FunGen** — Both are open source (Apache). Do we fork, wrap, or build independently? Wrapping FunscriptFlow for V1 could dramatically accelerate the timeline.

@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ForgeGen v2 — Influence-mixed haptics, per chapter</title>
+<meta name="viewport" content="width=1480" />
+<link rel="stylesheet" href="ForgeGen_v2/tokens.css" />
+<style>html, body, #root { height: 100%; }</style>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="ForgeGen_v2/data.js"></script>
+<script type="text/babel" src="ForgeGen_v2/primitives.jsx"></script>
+<script type="text/babel" src="ForgeGen_v2/tweaks-panel.jsx"></script>
+<script type="text/babel" src="ForgeGen_v2/AppShell.jsx"></script>
+<script type="text/babel" src="ForgeGen_v2/FunscriptChart.jsx"></script>
+<script type="text/babel" src="ForgeGen_v2/ProjectTab.jsx"></script>
+<script type="text/babel" src="ForgeGen_v2/AnalysisTab.jsx"></script>
+<script type="text/babel" src="ForgeGen_v2/RecipesTab.jsx"></script>
+<script type="text/babel" src="ForgeGen_v2/GenerateTab.jsx"></script>
+<script type="text/babel" src="ForgeGen_v2/OutputTab.jsx"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+    <rect width="200" height="200" fill="#0e1117"/>
+    <g transform="translate(100 100)" stroke="#ff4b4b" stroke-width="2.5" fill="none">
+      <polygon points="0,-44 38,-13 24,33 -24,33 -38,-13" fill="rgba(255,75,75,0.18)"/>
+      <line x1="0" y1="0" x2="0" y2="-44"/>
+      <line x1="0" y1="0" x2="38" y2="-13"/>
+      <line x1="0" y1="0" x2="24" y2="33"/>
+      <line x1="0" y1="0" x2="-24" y2="33"/>
+      <line x1="0" y1="0" x2="-38" y2="-13"/>
+      <circle cx="0" cy="-44" r="4" fill="#ff8c42" stroke="none"/>
+      <circle cx="38" cy="-13" r="4" fill="#ffd166" stroke="none"/>
+      <circle cx="24" cy="33"  r="4" fill="#4dabf7" stroke="none"/>
+      <circle cx="-24" cy="33" r="4" fill="#3ed598" stroke="none"/>
+      <circle cx="-38" cy="-13" r="4" fill="#c084fc" stroke="none"/>
+    </g>
+    <text x="100" y="178" text-anchor="middle" font-family="ui-monospace,monospace" font-size="14" fill="#ff4b4b" font-weight="700">FORGEGEN v2</text>
+  </svg>
+</template>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef } = React;
+
+// ── Tweak defaults — persisted via the EDITMODE markers below ──
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "funscriptVariant": "forged"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  // ── Pipeline state ──────────────────────────────────────
+  const [stage, setStage] = useState("project");
+  const [project, setProject] = useState(null);
+
+  // The current funscript variant toggled via Tweaks: "forged" or "raw".
+  const variantProject = useMemo(() => {
+    if (!project) return null;
+    const acts = t.funscriptVariant === "raw"
+      ? (project.funscript.rawActions || project.funscript.actions)
+      : project.funscript.actions;
+    return {
+      ...project,
+      funscript: { ...project.funscript, actions: acts },
+    };
+  }, [project, t.funscriptVariant]);
+
+  // ── Pipeline acceptance ─────────────────────────────────
+  const [pipeline, setPipeline] = useState({
+    project:  { accepted: false, chainFile: "project.input.json" },
+    analysis: { accepted: false, chainFile: "<stem>.chapters.json" },
+    recipes:  { accepted: false, chainFile: "<stem>.recipes.json" },
+    generate: { accepted: false, chainFile: "<stem>.funscript" },
+    output:   { accepted: false, chainFile: "<stem>.exported" },
+  });
+  const accept = (k) => setPipeline(p => ({ ...p, [k]: { ...p[k], accepted: true } }));
+  const reset  = (k) => setPipeline(p => ({ ...p, [k]: { ...p[k], accepted: false } }));
+
+  // ── Project stage ───────────────────────────────────────
+  const [busy, setBusy] = useState(false);
+  function handleLoadSample() {
+    setBusy(true);
+    setTimeout(() => {
+      const p = structuredClone(FG_SAMPLE_PROJECT);
+      // Seed per-chapter influence mix from the analyzer's suggestions.
+      p.influenceMix = p.chapters.map((c, i) => suggestInfluence(p, i));
+      setProject(p);
+      accept("project");
+      setBusy(false);
+      setToast({ kind: "text", icon: "circle-check-big", title: "Sample loaded",
+                 body: `${p.name}.chapters.json · ${p.chapters.length} chapters · ${(p.duration_ms/60_000).toFixed(1)} min`,
+                 accent: "var(--success)" });
+    }, 600);
+  }
+  function handleReanalyse() {
+    setBusy(true);
+    setTimeout(() => setBusy(false), 1200);
+  }
+
+  // ── Analysis stage ──────────────────────────────────────
+  const [focusedIdx, setFocusedIdx] = useState(0);
+  const [category, setCategory] = useState("structure");
+
+  // ── Recipes stage ───────────────────────────────────────
+  const [bulkRecipe, setBulkRecipe] = useState({ style: "full", density: 2, shape: "rise", emphasize: false });
+  const [targetId, setTargetId] = useState("keon");
+  const [recipes, setRecipes] = useState([]);
+  useEffect(() => {
+    if (project && recipes.length === 0) {
+      setRecipes(project.recipes.map(r => ({ ...r })));
+    }
+  }, [project]);
+  function setRecipe(i, r) {
+    setRecipes(prev => prev.map((x, j) => j === i ? r : x));
+  }
+  function setInfluence(i, mix) {
+    setProject(p => p ? ({
+      ...p,
+      influenceMix: p.influenceMix.map((m, j) => j === i ? mix : m),
+    }) : p);
+  }
+  function applyInfluenceToAll(mix) {
+    setProject(p => p ? ({ ...p, influenceMix: p.chapters.map(() => ({ ...mix })) }) : p);
+  }
+  function applyBulkRecipeToAll() {
+    setRecipes(project.chapters.map(() => ({ ...bulkRecipe })));
+  }
+
+  // ── Generate stage ──────────────────────────────────────
+  const [generating, setGenerating] = useState(false);
+  const [genStage, setGenStage] = useState("extract");
+  const [genProgress, setGenProgress] = useState(0);
+  const [genChapter, setGenChapter] = useState(0); // which chapter the sweep is on
+  function startGenerate() {
+    setGenerating(true);
+    setGenProgress(0);
+    setGenStage("extract");
+    setGenChapter(0);
+    const stages = ["extract", "load", "beats", "shape", "write"];
+    let t0 = performance.now(), dur = 3600;
+    const tick = setInterval(() => {
+      const elapsed = performance.now() - t0;
+      const p = Math.min(1, elapsed / dur);
+      setGenProgress(p);
+      const stageIdx = Math.min(stages.length - 1, Math.floor(p * stages.length));
+      setGenStage(stages[stageIdx]);
+      // Chapter sweep: during "shape" stage (60%-90%), advance through chapters
+      if (project && p > 0.6 && p < 0.95) {
+        const sweepP = (p - 0.6) / 0.35;
+        setGenChapter(Math.min(project.chapters.length - 1, Math.floor(sweepP * project.chapters.length)));
+      } else if (p >= 0.95) {
+        setGenChapter(project ? project.chapters.length - 1 : 0);
+      }
+      if (p >= 1) {
+        clearInterval(tick);
+        setGenerating(false);
+        accept("generate");
+        setStage("output");
+        setToast({ kind: "generated",
+                   body: `${project.funscript.actions.length.toLocaleString()} actions · ${project.bpm} BPM · ${fmtMs(project.duration_ms)}` });
+      }
+    }, 40);
+  }
+
+  // ── Output stage ────────────────────────────────────────
+  const [zoom, setZoom] = useState(null);
+  const [playheadMs, setPlayheadMs] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [autoZoom, setAutoZoom] = useState(true);
+  useEffect(() => {
+    if (!isPlaying || !project) return;
+    let raf, t0 = performance.now(), startMs = playheadMs ?? (zoom?.start_ms ?? 0);
+    const endMs = zoom ? zoom.end_ms : project.duration_ms;
+    const tick = () => {
+      const elapsed = performance.now() - t0;
+      const ms = startMs + elapsed;
+      if (ms >= endMs) { setPlayheadMs(endMs); setIsPlaying(false); return; }
+      setPlayheadMs(ms);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isPlaying]);
+  // Auto-zoom: as playhead moves through a chapter, zoom snaps to that chapter
+  useEffect(() => {
+    if (!autoZoom || !project || playheadMs == null) return;
+    const ch = project.chapters.find(c => playheadMs >= c.at_ms && playheadMs < c.end_ms);
+    if (ch && (!zoom || zoom.start_ms !== ch.at_ms)) {
+      setZoom({ start_ms: ch.at_ms, end_ms: ch.end_ms, source: "auto" });
+    }
+  }, [playheadMs, autoZoom]);
+
+  // ── Save / Open mocks ───────────────────────────────────
+  const [dirty, setDirty] = useState(false);
+  const [lastSavedAtMs, setLastSavedAtMs] = useState(null);
+  function handleSave() {
+    setDirty(false); setLastSavedAtMs(Date.now());
+    setToast({ kind: "saved", title: "Project saved", body: `${project?.name || "untitled"}.chapters.json` });
+  }
+  function handleOpen() {
+    setToast({ kind: "text", icon: "folder-open", title: "Recent projects",
+               body: "Use the rail on the Project stage to switch projects." });
+  }
+
+  // ── Toast ───────────────────────────────────────────────
+  const [toast, setToast] = useState(null);
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 3800);
+    return () => clearTimeout(id);
+  }, [toast]);
+
+  // ── Undo / redo (snapshot-based across recipes + influence mix) ─
+  const [past, setPast] = useState([]);
+  const [future, setFuture] = useState([]);
+  function snapshot() {
+    return {
+      recipes: structuredClone(recipes),
+      mix: structuredClone(project?.influenceMix || []),
+      bulkRecipe: { ...bulkRecipe },
+      targetId,
+    };
+  }
+  function pushHist(label) {
+    setPast(p => [...p.slice(-49), { ...snapshot(), label }]);
+    setFuture([]);
+  }
+  function applySnap(s) {
+    setRecipes(s.recipes);
+    setProject(p => p ? ({ ...p, influenceMix: s.mix }) : p);
+    setBulkRecipe(s.bulkRecipe);
+    setTargetId(s.targetId);
+  }
+  function undo() {
+    if (past.length === 0) return;
+    const prev = past[past.length - 1];
+    setPast(p => p.slice(0, -1));
+    setFuture(f => [{ ...snapshot(), label: prev.label }, ...f.slice(0, 49)]);
+    applySnap(prev);
+    setToast({ kind: "undo", label: prev.label });
+  }
+  function redo() {
+    if (future.length === 0) return;
+    const next = future[0];
+    setFuture(f => f.slice(1));
+    setPast(p => [...p.slice(-49), { ...snapshot(), label: next.label }]);
+    applySnap(next);
+    setToast({ kind: "redo", label: next.label });
+  }
+
+  // ── Tweaks panel discoverability ────────────────────────
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+  useEffect(() => {
+    window.postMessage({ type: tweaksOpen ? "__activate_edit_mode" : "__deactivate_edit_mode" }, "*");
+  }, [tweaksOpen]);
+
+  // ── Global shortcuts ────────────────────────────────────
+  useEffect(() => {
+    function onKey(e) {
+      const tag = (e.target?.tagName || "").toUpperCase();
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
+      const cmd = e.metaKey || e.ctrlKey;
+      if (cmd && !e.shiftKey && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); return; }
+      if (cmd && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) {
+        e.preventDefault(); redo(); return;
+      }
+      if (cmd && e.key.toLowerCase() === "k") { e.preventDefault(); setTweaksOpen(o => !o); return; }
+      if (cmd && e.key.toLowerCase() === "s") { e.preventDefault(); handleSave(); return; }
+      if (e.key === " " && stage === "output") { e.preventDefault(); setIsPlaying(p => !p); return; }
+      if (e.key === "Escape") { setZoom(null); return; }
+      // Stage navigation
+      if (!cmd && /^[1-5]$/.test(e.key)) {
+        const idx = parseInt(e.key, 10) - 1;
+        const s = FG_STAGES[idx];
+        if (s && pipeline[s.id]) {
+          const up = idx === 0 ? null : FG_STAGES[idx - 1];
+          if (!up || pipeline[up.id]?.accepted) setStage(s.id);
+        }
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [past.length, future.length, stage, pipeline]);
+
+  useEffect(() => { window.lucide?.createIcons?.(); });
+
+  // ── Stage body ──────────────────────────────────────────
+  let body = null, acceptKey = null, acceptSummary = "", acceptLabel = "Accept and continue", acceptIcon = "check";
+
+  if (stage === "project") {
+    acceptKey = "project";
+    acceptSummary = project
+      ? `${project.name} · ${project.chapters.length} chapters · ${fmtMs(project.duration_ms)}`
+      : "Pick a media file to begin.";
+    body = <ProjectTab project={project}
+                       busy={busy}
+                       onLoadSample={handleLoadSample}
+                       onReanalyse={handleReanalyse}
+                       onContinue={() => setStage("analysis")} />;
+  } else if (stage === "analysis" && project) {
+    acceptKey = "analysis";
+    acceptSummary = `${project.chapters.length} chapters · ${project.phrases.length} phrases · ${project.beats.length.toLocaleString()} beats at ${project.bpm} BPM`;
+    body = <AnalysisTab project={project} focusedIdx={focusedIdx} onFocus={setFocusedIdx}
+                        category={category} onSetCategory={setCategory}
+                        onContinue={() => setStage("recipes")} />;
+  } else if (stage === "recipes" && project) {
+    acceptKey = "recipes";
+    acceptSummary = recipeSummary(project, recipes, targetId);
+    acceptLabel = "Save recipes and continue";
+    body = <RecipesTab project={project}
+                       focusedIdx={focusedIdx} onFocus={setFocusedIdx}
+                       recipes={recipes}
+                       onRecipeChange={(i, r) => { pushHist("Set recipe"); setRecipe(i, r); setDirty(true); }}
+                       onInfluenceChange={(i, m) => { pushHist("Set influence"); setInfluence(i, m); setDirty(true); }}
+                       onApplyRecipeAll={() => { pushHist("Apply recipe to all"); applyBulkRecipeToAll(); setDirty(true); }}
+                       onApplyInfluenceAll={(m) => { pushHist("Apply influence to all"); applyInfluenceToAll(m); setDirty(true); }}
+                       bulkRecipe={bulkRecipe} onBulkRecipeChange={setBulkRecipe}
+                       targetId={targetId} onTargetChange={(v) => { pushHist("Change target"); setTargetId(v); }} />;
+  } else if (stage === "generate" && project) {
+    acceptKey = "generate";
+    acceptSummary = generating
+      ? `Forging chapter ${genChapter + 1} of ${project.chapters.length}…`
+      : pipeline.generate.accepted
+        ? `${project.funscript.actions.length.toLocaleString()} actions · ${fmtMs(project.duration_ms)}`
+        : `Ready to forge · ${project.chapters.length} chapters · target ${FG_TARGETS.find(x => x.id === targetId)?.label}`;
+    acceptLabel = generating ? "Forging…" : (pipeline.generate.accepted ? "Re-forge" : "Forge funscript");
+    acceptIcon = "wand-sparkles";
+    body = <GenerateTab project={project} recipes={recipes} targetId={targetId}
+                        generating={generating} stage={genStage} progress={genProgress} sweepChapter={genChapter}
+                        accepted={pipeline.generate.accepted}
+                        onForge={startGenerate} />;
+  } else if (stage === "output" && project && variantProject) {
+    acceptKey = "output";
+    acceptSummary = `${variantProject.funscript.actions.length.toLocaleString()} actions · ${fmtMs(variantProject.duration_ms)} · ready to export`;
+    acceptLabel = "Mark exported";
+    body = <OutputTab project={variantProject} recipes={recipes}
+                      zoom={zoom} onSetZoom={setZoom}
+                      autoZoom={autoZoom} onSetAutoZoom={setAutoZoom}
+                      playheadMs={playheadMs} onSetPlayheadMs={setPlayheadMs}
+                      isPlaying={isPlaying} onTogglePlay={() => setIsPlaying(p => !p)}
+                      onSaveAs={() => setToast({ kind: "saved", title: "Funscript copied",
+                                                  body: `Saved to ~/Downloads/${project.name}.funscript` })}
+                      onReveal={() => setToast({ kind: "text", icon: "folder-open", title: "Revealed in finder",
+                                                  body: project.source_path })}
+                      onExportToFFP={() => setToast({ kind: "text", icon: "arrow-up-right",
+                                                       title: "Handed off to FunscriptForge",
+                                                       body: "FunscriptForge opens the .funscript with the chapter sidecar attached." })} />;
+  } else {
+    body = <FGTabBody>
+      <div style={{ padding: 24, color: "var(--text-dim)", display: "flex",
+                    flexDirection: "column", alignItems: "center", textAlign: "center",
+                    justifyContent: "center", height: "100%" }}>
+        <Icon name="lock" size={28} style={{ marginBottom: 12 }} />
+        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>This stage isn't ready yet</div>
+        <div style={{ fontSize: 11.5, color: "var(--text-dim)", marginTop: 4, maxWidth: 240, lineHeight: 1.5 }}>
+          Complete the upstream stages first — the pathway lights green as each one accepts.
+        </div>
+      </div>
+    </FGTabBody>;
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg)" }}>
+      <FGTopBar project={project || { name: "untitled", filename: "untitled.chapters.json" }}
+                dirty={dirty} lastSavedAtMs={lastSavedAtMs}
+                onOpen={handleOpen} onSave={handleSave}
+                onToggleTweaks={() => setTweaksOpen(o => !o)} tweaksOpen={tweaksOpen}
+                canUndo={past.length > 0} canRedo={future.length > 0}
+                undoLabel={past.length ? past[past.length - 1].label : null}
+                redoLabel={future.length ? future[0].label : null}
+                undoDepth={past.length} onUndo={undo} onRedo={redo} />
+      <FGPathway active={stage} onChange={setStage} pipeline={pipeline} />
+
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        {body}
+      </div>
+
+      {acceptKey && (
+        <FGAcceptBar
+          summary={acceptSummary} chainFile={pipeline[acceptKey].chainFile}
+          accepted={pipeline[acceptKey].accepted}
+          primaryLabel={acceptLabel}
+          primaryIcon={acceptIcon}
+          onAccept={() => {
+            if (acceptKey === "generate") {
+              if (!generating) startGenerate();
+              return;
+            }
+            accept(acceptKey);
+            const nextMap = { project: "analysis", analysis: "recipes", recipes: "generate", generate: "output" };
+            if (nextMap[acceptKey]) setStage(nextMap[acceptKey]);
+          }}
+          onReset={() => reset(acceptKey)} />
+      )}
+      <FGStatusBar activeTab={stage} project={project}
+                   chainFile={acceptKey ? pipeline[acceptKey].chainFile : null} />
+
+      <FGToast toast={toast} onClose={() => setToast(null)} />
+
+      <TweaksPanel title="ForgeGen · Tweaks">
+        <TweakSection label="Funscript chart" />
+        <TweakRadio  label="Variant" value={t.funscriptVariant}
+                     options={[
+                       { value: "forged", label: "Forged" },
+                       { value: "raw",    label: "Raw" },
+                     ]}
+                     onChange={(v) => setTweak("funscriptVariant", v)} />
+      </TweaksPanel>
+    </div>
+  );
+}
+
+// ── Helpers ───────────────────────────────────────────────
+// Seed an influence mix per chapter, inferred from analyzer KPIs.
+// Energetic chapters lean Beat + Bass; ambient/intro chapters lean
+// Voice + Ambient. The user can override anything in Recipes.
+function suggestInfluence(project, i) {
+  const k = project.energy.per_chapter[i];
+  const c = project.chapters[i];
+  const energy = k.energy_mean;
+  const isPercussive = c.contentType === "action" || c.contentType === "climax";
+  const isAmbient = c.contentType === "intro" || c.contentType === "outro";
+  const isBuild = c.contentType === "build" || c.contentType === "edge";
+  if (isPercussive) return { beat: 70, bass: 60, voice: 20, ambient: 15 };
+  if (isAmbient)    return { beat: 20, bass: 25, voice: 55, ambient: 65 };
+  if (isBuild)      return { beat: 55, bass: 50, voice: 40, ambient: 35 };
+  // Default — driven by energy
+  return {
+    beat:    Math.round(30 + energy * 50),
+    bass:    Math.round(25 + energy * 50),
+    voice:   Math.round(60 - energy * 30),
+    ambient: Math.round(50 - energy * 25),
+  };
+}
+
+function recipeSummary(project, recipes, targetId) {
+  if (!recipes.length) return "No recipes authored yet.";
+  const styles = new Set(recipes.map(r => r.style));
+  const dens   = new Set(recipes.map(r => r.density));
+  const mix    = project.influenceMix || [];
+  const dominant = mix.length
+    ? dominantInfluence(mix)
+    : null;
+  return `${recipes.length} recipes · style ${styles.size === 1 ? [...styles][0] : "mixed"} · density ${dens.size === 1 ? `${[...dens][0]}×` : "mixed"} · target ${FG_TARGETS.find(x => x.id === targetId)?.label}${dominant ? ` · dominant influence: ${dominant}` : ""}`;
+}
+function dominantInfluence(mix) {
+  const sum = { beat: 0, bass: 0, voice: 0, ambient: 0 };
+  for (const m of mix) { sum.beat += m.beat; sum.bass += m.bass; sum.voice += m.voice; sum.ambient += m.ambient; }
+  return Object.entries(sum).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+window.suggestInfluence = suggestInfluence;
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
