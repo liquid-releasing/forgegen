@@ -1,0 +1,3 @@
+# Design-system export zips are heavy provenance dumps — keep the extracted
+# sources in git, not the archives.
+*.zip

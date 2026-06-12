@@ -240,7 +240,7 @@ function mockListPatterns() {
   return {
     version: 1,
     patterns: [
-      { id: 'h_pulse', label: 'Pulse', color: '#4cc3ff', category: 'haptic',
+      { id: 'h_pulse', label: 'Pulse', color: '#ff4b4b', category: 'haptic',
         consumers: ['haptic', 'edit', 'stim', 'multiaxis'],
         summary: 'Steady on/off oscillation. The metronome.' },
       { id: 'h_wave', label: 'Wave', color: '#3ed598', category: 'haptic',
@@ -263,7 +263,7 @@ function mockListPatterns() {
         summary: 'Audio-following. No inherent shape — envelope = audio energy.' },
     ],
     consumers: [
-      { id: 'haptic', label: 'Haptics', icon: 'vibrate', color: '#4cc3ff' },
+      { id: 'haptic', label: 'Haptics', icon: 'vibrate', color: '#ff4b4b' },
       { id: 'stim', label: 'Stim', icon: 'zap', color: '#ffb547' },
       { id: 'multiaxis', label: 'Multi-axis', icon: 'move-3d', color: '#c77dff' },
       { id: 'edit', label: 'Edit', icon: 'edit-3', color: '#3ed598' },
@@ -328,7 +328,7 @@ function mockGenerateFunscript(path, options, onProgress) {
   // Simulate a synthesis with stage progress so browser-mode dev exercises
   // the same UI path as Tauri runtime.
   const stem = String(path).replace(/\.[^.]+$/, '');
-  const density = options?.density ?? 'half';
+  const density = options?.density ?? '1';
   const factor = { half: 1, full: 2, '1': 1, '2': 2, '4': 4, '8': 8 }[density] ?? 1;
   const result = {
     output: `${stem}.funscript`,
@@ -400,10 +400,10 @@ function mockReadFunscript(path) {
     { at_ms: 480000, end_ms: 572000, density_per_sec: 1.0 },  // recover
   ];
   const RECIPES = [
-    { source: 'percussive', stroke_density: 'half', tone: 'flat', emphasize_beats: false },
+    { source: 'percussive', stroke_density: '1',    tone: 'flat', emphasize_beats: false },
     { source: 'percussive', stroke_density: '1',    tone: 'rise', emphasize_beats: false },
     { source: 'percussive', stroke_density: '2',    tone: 'auto', emphasize_beats: true  },
-    { source: 'percussive', stroke_density: 'half', tone: 'fall', emphasize_beats: false },
+    { source: 'percussive', stroke_density: '1',    tone: 'fall', emphasize_beats: false },
   ];
   const actions = [];
   let pos = 50;

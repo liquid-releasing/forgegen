@@ -25,6 +25,7 @@ import {
   saveFunscriptCopy,
 } from '../api/videoflow.js';
 import { fmtTime } from '../lib/analysis.js';
+import { SOURCES, sourceMixText } from '../lib/sourceEngine.js';
 
 const labelStyle = {
   fontSize: 10,
@@ -54,6 +55,8 @@ function StatRow({ label, value, mono }) {
 function SummaryCard({ funscript, result, selectedVersion }) {
   const gen = funscript?.metadata?.generated_from || {};
   const source = gen.source || {};
+  const sourceSelections = Array.isArray(gen.source_selections) ? gen.source_selections : [];
+  const seams = Array.isArray(gen.seams) ? gen.seams : [];
   const actionCount = funscript?.actions?.length || 0;
   const durMs =
     source.duration_ms ||
@@ -126,6 +129,44 @@ function SummaryCard({ funscript, result, selectedVersion }) {
       {source.partial_md5 && (
         <StatRow label="source md5" value={source.partial_md5} mono />
       )}
+      {sourceSelections.length > 0 && (
+        <StatRow
+          label="source mix"
+          value={`${sourceMixText(sourceSelections)} · ${seams.length} seam${seams.length === 1 ? '' : 's'}`}
+        />
+      )}
+    </div>
+  );
+}
+
+function SourcePlan({ funscript, sidecar }) {
+  const gen = funscript?.metadata?.generated_from || {};
+  const selections = Array.isArray(gen.source_selections) ? gen.source_selections : [];
+  if (!selections.length) return null;
+  const chapters = sidecar?.chapters || [];
+  return (
+    <div style={{
+      background: 'var(--bg-elevated)',
+      border: '1px solid var(--border)',
+      borderRadius: 8,
+      overflow: 'hidden',
+    }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '52px 1fr 130px', padding: '8px 10px', background: 'var(--bg)', color: 'var(--muted)', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>
+        <span>#</span>
+        <span>Chapter</span>
+        <span>Source</span>
+      </div>
+      {selections.map((src, idx) => {
+        const chapter = chapters[idx];
+        const meta = SOURCES[src] || SOURCES.audio;
+        return (
+          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '52px 1fr 130px', padding: '9px 10px', borderTop: '1px solid var(--border)', alignItems: 'center', fontSize: 12 }}>
+            <span style={{ color: 'var(--muted)', fontFamily: 'ui-monospace, monospace' }}>{idx + 1}</span>
+            <span>{chapter?.name || `Chapter ${idx + 1}`}</span>
+            <span style={{ color: meta.color, fontWeight: 800 }}>{meta.label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -365,8 +406,8 @@ export default function Output({ sidecar, lastFunscript }) {
           {' — '}
           inspect the funscript you just generated. The density chart shows
           how often the toy moves over time; the per-chapter table shows the
-          recipe used for each chapter. Save the file elsewhere or open it
-          in the file manager.
+          recipe and source used for each chapter. Save the file elsewhere or
+          open it in the file manager.
         </div>
 
         {/* 2. Version switcher (only shown if there's >1 version on disk) */}
@@ -395,6 +436,11 @@ export default function Output({ sidecar, lastFunscript }) {
         {/* 4. Charts + table — only render once funscript is loaded */}
         {funscript && (
           <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={labelStyle}>Source plan</div>
+              <SourcePlan funscript={funscript} sidecar={sidecar} />
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={labelStyle}>Density over time</div>
               <DensityHistogram funscript={funscript} sidecar={sidecar} />

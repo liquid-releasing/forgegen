@@ -1,4 +1,5 @@
 mod commands;
+mod library;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -32,6 +33,15 @@ pub fn run() {
             commands::reveal_in_explorer,
             commands::save_funscript_copy,
             commands::list_funscript_versions,
+            library::library_fs_readdir,
+            library::library_fs_stat,
+            library::library_fs_exists,
+            library::library_fs_read_json,
+            library::library_fs_read_text,
+            library::library_fs_write_text,
+            library::library_config_path,
+            library::library_reveal_in_explorer,
+            library::library_pick_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -17,7 +17,7 @@ export const TARGETS = [
     id: 'handy',
     label: 'The Handy',
     summary: 'Stays within the Handy\'s comfortable sustained cadence.',
-    recommendedDensity: 'half',
+    recommendedDensity: '1',
     maxSafeDensity: '1',
   },
   {

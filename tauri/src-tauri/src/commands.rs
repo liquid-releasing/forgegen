@@ -112,7 +112,28 @@ fn python_bin() -> PathBuf {
 // Sidecar path resolution (matches videoflow.sidecar.sidecar_path_for)
 // ---------------------------------------------------------------------------
 
+fn forge_dir(media_path: &Path) -> Result<PathBuf, String> {
+    let p = Path::new(media_path);
+    let stem = p
+        .file_stem()
+        .ok_or_else(|| format!("invalid media path (no stem): {}", media_path.display()))?
+        .to_string_lossy();
+    let parent = p
+        .parent()
+        .ok_or_else(|| format!("invalid media path (no parent): {}", media_path.display()))?;
+    Ok(parent.join(format!(".{}.forge", stem)))
+}
+
 fn sidecar_path_for(media_path: &str) -> Result<PathBuf, String> {
+    let p = Path::new(media_path);
+    let stem = p
+        .file_stem()
+        .ok_or_else(|| format!("invalid media path (no stem): {}", media_path))?
+        .to_string_lossy();
+    Ok(forge_dir(p)?.join(format!("{}.chapters.json", stem)))
+}
+
+fn legacy_sidecar_path_for(media_path: &str) -> Result<PathBuf, String> {
     let p = Path::new(media_path);
     let stem = p
         .file_stem()
@@ -122,6 +143,15 @@ fn sidecar_path_for(media_path: &str) -> Result<PathBuf, String> {
         .parent()
         .ok_or_else(|| format!("invalid media path (no parent): {}", media_path))?;
     Ok(parent.join(format!("{}.chapters.json", stem)))
+}
+
+async fn read_sidecar_for_media(media_path: &str) -> Result<Option<Value>, String> {
+    let canonical = sidecar_path_for(media_path)?;
+    if let Some(data) = read_sidecar_at(&canonical).await? {
+        return Ok(Some(data));
+    }
+    let legacy = legacy_sidecar_path_for(media_path)?;
+    read_sidecar_at(&legacy).await
 }
 
 async fn read_sidecar_at(path: &Path) -> Result<Option<Value>, String> {
@@ -469,14 +499,14 @@ pub async fn auto_chapter(app: AppHandle, path: String) -> Result<Value, String>
         return Err("cancelled".to_string());
     }
 
-    let sidecar = sidecar_path_for(&path)?;
-    if let Ok(Some(data)) = read_sidecar_at(&sidecar).await {
+    if let Ok(Some(data)) = read_sidecar_for_media(&path).await {
         return Ok(data);
     }
 
     // No sidecar on disk → the run actually failed. Surface the bridge
     // error if we have one, otherwise a generic missing-file message.
     bridge_result?;
+    let sidecar = sidecar_path_for(&path)?;
     Err(format!(
         "auto-chapter completed but expected sidecar not found: {}",
         sidecar.display()
@@ -488,8 +518,7 @@ pub async fn auto_chapter(app: AppHandle, path: String) -> Result<Value, String>
 /// decide whether to run auto_chapter to create one).
 #[tauri::command]
 pub async fn read_sidecar(path: String) -> Result<Option<Value>, String> {
-    let sidecar = sidecar_path_for(&path)?;
-    read_sidecar_at(&sidecar).await
+    read_sidecar_for_media(&path).await
 }
 
 // ---------------------------------------------------------------------------
@@ -529,6 +558,15 @@ pub struct GenerateOptions {
     /// `chapters[i].at_ms` / `end_ms` (or `null` for the trailing chapter).
     #[serde(default)]
     pub chapters: Option<Vec<ChapterBound>>,
+    /// Per-chapter final motion source. "audio" keeps videoflow output for
+    /// that chapter; "video" / "imported" splice candidate actions into the
+    /// final funscript after the audio candidate has been generated.
+    #[serde(default, alias = "sourceSelections")]
+    pub source_selections: Option<Vec<String>>,
+    /// Optional candidate tracks supplied by the UI. v3 milestone uses a
+    /// mocked video candidate; real CV later feeds the same shape.
+    #[serde(default, alias = "candidateTracks")]
+    pub candidate_tracks: Option<CandidateTracks>,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone)]
@@ -547,6 +585,20 @@ pub struct ChapterBound {
     /// beat-map's duration_ms.
     #[serde(default)]
     pub end_ms: Option<u64>,
+}
+
+#[derive(serde::Deserialize, Clone, Default)]
+pub struct CandidateTracks {
+    #[serde(default)]
+    pub video: Option<Vec<FunscriptAction>>,
+    #[serde(default)]
+    pub imported: Option<Vec<FunscriptAction>>,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Clone)]
+pub struct FunscriptAction {
+    pub at: u64,
+    pub pos: i64,
 }
 
 /// Compute the partial-MD5 of `path` — first 64KB + middle 64KB + last 64KB,
@@ -590,6 +642,195 @@ fn partial_md5(path: &Path) -> Result<String, String> {
     }
     let digest = hasher.finalize();
     Ok(digest.iter().map(|b| format!("{:02x}", b)).collect())
+}
+
+fn action_from_value(v: &Value) -> Option<FunscriptAction> {
+    Some(FunscriptAction {
+        at: v.get("at")?.as_u64()?,
+        pos: v.get("pos")?.as_i64()?,
+    })
+}
+
+fn actions_to_value(actions: &[FunscriptAction]) -> Value {
+    Value::Array(
+        actions
+            .iter()
+            .map(|a| serde_json::json!({ "at": a.at, "pos": a.pos }))
+            .collect(),
+    )
+}
+
+fn slice_actions(actions: &[FunscriptAction], start: u64, end: u64) -> Vec<FunscriptAction> {
+    actions
+        .iter()
+        .filter(|a| a.at >= start && a.at < end)
+        .cloned()
+        .collect()
+}
+
+fn blend_seams(actions: &mut [FunscriptAction], seams: &[Value], window_ms: u64) {
+    if actions.len() < 2 || seams.is_empty() {
+        return;
+    }
+    for seam in seams {
+        let Some(at) = seam.get("at_ms").and_then(|v| v.as_u64()) else {
+            continue;
+        };
+        let idxs: Vec<usize> = actions
+            .iter()
+            .enumerate()
+            .filter(|(_, a)| a.at.abs_diff(at) <= window_ms)
+            .map(|(idx, _)| idx)
+            .collect();
+        if idxs.len() < 2 {
+            continue;
+        }
+        let first = idxs[0];
+        let last = *idxs.last().unwrap_or(&first);
+        let a0 = actions[first].at;
+        let a1 = actions[last].at;
+        let p0 = actions[first].pos as f64;
+        let p1 = actions[last].pos as f64;
+        for idx in idxs {
+            let t = if a1 == a0 {
+                0.0
+            } else {
+                (actions[idx].at.saturating_sub(a0)) as f64 / (a1 - a0) as f64
+            };
+            let line = p0 + (p1 - p0) * t;
+            actions[idx].pos = ((actions[idx].pos as f64 * 0.45) + (line * 0.55)).round() as i64;
+        }
+    }
+}
+
+fn apply_source_stitch(
+    final_path: &Path,
+    options: &GenerateOptions,
+) -> Result<Option<(usize, usize)>, String> {
+    let Some(selections) = options.source_selections.as_ref() else {
+        return Ok(None);
+    };
+    if selections.is_empty() {
+        return Ok(None);
+    }
+    let all_audio = selections.iter().all(|s| s == "audio");
+    let Some(chapters) = options.chapters.as_ref() else {
+        return Ok(None);
+    };
+    if chapters.len() != selections.len() {
+        return Err(format!(
+            "source selection length mismatch: {} chapters vs {} selections",
+            chapters.len(),
+            selections.len()
+        ));
+    }
+
+    let text = std::fs::read_to_string(final_path)
+        .map_err(|e| format!("read generated funscript {}: {}", final_path.display(), e))?;
+    let mut doc: Value = serde_json::from_str(&text)
+        .map_err(|e| format!("parse generated funscript {}: {}", final_path.display(), e))?;
+    let audio_actions: Vec<FunscriptAction> = doc
+        .get("actions")
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.iter().filter_map(action_from_value).collect())
+        .unwrap_or_default();
+    if audio_actions.is_empty() {
+        return Err("generated audio candidate has no actions to stitch".to_string());
+    }
+
+    if all_audio {
+        if let Some(obj) = doc.as_object_mut() {
+            let metadata = obj
+                .entry("metadata".to_string())
+                .or_insert_with(|| serde_json::json!({}));
+            if let Some(meta_obj) = metadata.as_object_mut() {
+                let generated_from = meta_obj
+                    .entry("generated_from".to_string())
+                    .or_insert_with(|| serde_json::json!({}));
+                if let Some(gen_obj) = generated_from.as_object_mut() {
+                    gen_obj.insert(
+                        "source_selections".to_string(),
+                        serde_json::to_value(selections).unwrap_or_else(|_| Value::Array(vec![])),
+                    );
+                    gen_obj.insert("seams".to_string(), Value::Array(vec![]));
+                    gen_obj.insert(
+                        "candidate_provenance".to_string(),
+                        serde_json::json!({ "audio": "audio-synth" }),
+                    );
+                }
+            }
+        }
+        let patched = serde_json::to_string_pretty(&doc)
+            .map_err(|e| format!("serialize source provenance: {}", e))?;
+        std::fs::write(final_path, patched)
+            .map_err(|e| format!("write source provenance {}: {}", final_path.display(), e))?;
+        return Ok(Some((audio_actions.len(), 0)));
+    }
+
+    let tracks = options.candidate_tracks.clone().unwrap_or_default();
+    let mut stitched: Vec<FunscriptAction> = Vec::new();
+    let mut seams: Vec<Value> = Vec::new();
+    let duration_end = audio_actions.last().map(|a| a.at + 1).unwrap_or(0);
+    for (idx, chapter) in chapters.iter().enumerate() {
+        let start = chapter.at_ms;
+        let end = chapter.end_ms.unwrap_or(duration_end);
+        let src = selections.get(idx).map(|s| s.as_str()).unwrap_or("audio");
+        let picked = match src {
+            "video" => tracks.video.as_ref().unwrap_or(&audio_actions),
+            "imported" => tracks.imported.as_ref().unwrap_or(&audio_actions),
+            _ => &audio_actions,
+        };
+        stitched.extend(slice_actions(picked, start, end));
+        if idx > 0 {
+            let prev = selections.get(idx - 1).map(|s| s.as_str()).unwrap_or("audio");
+            if prev != src {
+                seams.push(serde_json::json!({
+                    "at_ms": start,
+                    "from": prev,
+                    "to": src,
+                }));
+            }
+        }
+    }
+    stitched.sort_by_key(|a| a.at);
+    stitched.dedup_by_key(|a| a.at);
+    if stitched.is_empty() {
+        return Err("source stitching produced no actions".to_string());
+    }
+    blend_seams(&mut stitched, &seams, 500);
+
+    if let Some(obj) = doc.as_object_mut() {
+        obj.insert("actions".to_string(), actions_to_value(&stitched));
+        let metadata = obj
+            .entry("metadata".to_string())
+            .or_insert_with(|| serde_json::json!({}));
+        if let Some(meta_obj) = metadata.as_object_mut() {
+            let generated_from = meta_obj
+                .entry("generated_from".to_string())
+                .or_insert_with(|| serde_json::json!({}));
+            if let Some(gen_obj) = generated_from.as_object_mut() {
+                gen_obj.insert(
+                    "source_selections".to_string(),
+                    serde_json::to_value(selections).unwrap_or_else(|_| Value::Array(vec![])),
+                );
+                gen_obj.insert("seams".to_string(), Value::Array(seams.clone()));
+                gen_obj.insert(
+                    "candidate_provenance".to_string(),
+                    serde_json::json!({
+                        "audio": "audio-synth",
+                        "video": if tracks.video.is_some() { "video-mock" } else { "unavailable" },
+                        "imported": if tracks.imported.is_some() { "imported" } else { "unavailable" },
+                    }),
+                );
+            }
+        }
+    }
+
+    let patched = serde_json::to_string_pretty(&doc)
+        .map_err(|e| format!("serialize stitched funscript: {}", e))?;
+    std::fs::write(final_path, patched)
+        .map_err(|e| format!("write stitched funscript {}: {}", final_path.display(), e))?;
+    Ok(Some((stitched.len(), seams.len())))
 }
 
 /// Run `videoflow generate-funscript <input> <output>` with either single-
@@ -757,6 +998,22 @@ pub async fn generate_funscript(
                 "output".to_string(),
                 serde_json::Value::String(final_str),
             );
+        }
+        if let Some((stitched_actions, seam_count)) = apply_source_stitch(&final_path, &options)? {
+            if let Some(obj) = value.as_object_mut() {
+                obj.insert(
+                    "actions".to_string(),
+                    serde_json::Value::Number(serde_json::Number::from(stitched_actions as u64)),
+                );
+                obj.insert(
+                    "source_aware".to_string(),
+                    serde_json::Value::Bool(true),
+                );
+                obj.insert(
+                    "seams".to_string(),
+                    serde_json::Value::Number(serde_json::Number::from(seam_count as u64)),
+                );
+            }
         }
         return Ok(value);
     }
