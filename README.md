@@ -138,6 +138,12 @@ Clean handoff at the `.funscript` boundary.
 
 ---
 
+## Acknowledgements
+
+- **[Funscript-Flow](https://github.com/Funscript-Flow/Funscript-Flow)** (Apache-2.0) — the computer-vision video→funscript generator we build *on top of* rather than rebuild. It owns the expensive CV core (optical-flow motion detection → `.funscript`); forgegen adds the pattern interpretation, chapter/phrase structure, and arc on top (see [`architecture/VIDEO_VIA_EXTERNAL_GENERATOR.md`](architecture/VIDEO_VIA_EXTERNAL_GENERATOR.md)). Its optical-flow output also independently **confirmed the depth law** at the heart of our generator — that stroke depth must be a fixed full backbone, with the signal driving only timing and density (see [`architecture/GENERATION_DEPTH_LAW.md`](architecture/GENERATION_DEPTH_LAW.md)). Apache-2.0 is compatible with forgegen's MIT; Funscript-Flow is independent and distributed under its own license. Thanks to its authors. Sibling project for VR/POV: **[FunGen](https://github.com/ack00gar/FunGen-AI-Powered-Funscript-Generator)**.
+
+---
+
 ## Docs
 
 Full documentation: `mkdocs serve` from the repo root, or see `docs/`.

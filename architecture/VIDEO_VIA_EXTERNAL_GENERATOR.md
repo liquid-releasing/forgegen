@@ -121,6 +121,15 @@ true-blend path.
 
 ## Licensing — MIT project + Apache-2.0 component
 
+> **Decision (2026-06-13):** **Mode 2 — vendor the source**, and **keep forgegen
+> MIT** (no Apache patent grant for our own code for now). The Apache-2.0 license
+> boundary follows the vendored *folder*; our glue stays MIT. Obligations to
+> honour when the source lands: keep FF-Flow's `LICENSE` + any `NOTICE` in its
+> subfolder, **state significant changes** if we modify it, and list it in
+> [`THIRD_PARTY_LICENSES.md`](../THIRD_PARTY_LICENSES.md) (entry added ahead of
+> the vendor drop). Revisit the keep-MIT call only if we want the patent grant
+> for the novel generation IP (depth law / density arc).
+
 FF-Flow is **Apache-2.0**, which is **compatible with forgegen's MIT** — we do
 **not** relicense the project. Keep forgegen MIT; carry FF-Flow under its own
 terms. Two modes by integration depth:

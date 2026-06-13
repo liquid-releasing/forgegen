@@ -6,6 +6,19 @@ Packaged releases of ForgeGen bundle third-party software that retains its own l
 
 ---
 
+## Vendored components
+
+### Funscript-Flow
+
+- **License:** Apache License 2.0
+- **Project:** [github.com/Funscript-Flow/Funscript-Flow](https://github.com/Funscript-Flow/Funscript-Flow)
+- **License text:** [apache.org/licenses/LICENSE-2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- **Used for:** the computer-vision video→funscript core (optical-flow motion detection → `.funscript`). ForgeGen builds pattern interpretation, chapter / phrase structure, and the density arc on top — see [`architecture/VIDEO_VIA_EXTERNAL_GENERATOR.md`](architecture/VIDEO_VIA_EXTERNAL_GENERATOR.md).
+- **Vendoring terms:** carried in its own subfolder under Apache-2.0; its `LICENSE` and any `NOTICE` file are retained verbatim, and significant modifications (if any) are stated in-folder. The Apache-2.0 boundary follows that folder; the rest of ForgeGen remains MIT.
+- **Status:** *entry recorded ahead of the source drop* — the vendored folder is added when the video path ships.
+
+---
+
 ## Bundled binaries
 
 ### FFmpeg
