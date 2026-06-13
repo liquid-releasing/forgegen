@@ -166,6 +166,65 @@ idea generalized to every generator.)
 
 ---
 
+## ★ Resolved flow: two analyses, the door split, and the source preview
+
+*(2026-06-13 — resolves the before/after-Generate ordering tension.)*
+
+**There are two different "analyses," and they live in different places:**
+- **Audio/video analysis** (beats · energy · bass · spectrogram · scene-cuts)
+  is *input* analysis the generator needs → it runs **inside Generate as the
+  owned wait**, not as a separate user step. **Chapters fall out of it.**
+- **Motion/funscript analysis** (phrases · the decile/dynamics diagnosis)
+  analyzes *the script*, so it runs **after** a funscript exists.
+
+So "analyze before or after Generate?" — **audio analysis is before** (fused
+into Generate); **phrase/motion analysis is after** (on the result). Same word,
+two jobs.
+
+**The flow bifurcates at Project, by door:**
+- **Generate door (no funscript yet):** Library → Project *(shows the **source
+  preview**, not an empty funscript)* → **Generate** *(audio analysis runs as
+  the wait → chapters auto-appear → a default-arc draft drops out)* → **author**
+  *(edit chapters, assign passage intensities → live-regenerates; events while
+  watching; density profile)* → **phrases** → rest of FSF.
+- **Improve door (funscript present):** Library → Project *(shows the funscript
+  + its diagnosis)* → author → phrases → rest of FSF. No Generate; the methods
+  are transforms.
+
+**The dependency that orders chapters / passages / phrases:** passages are runs
+of chapters, so chapters must exist first (they come from the audio analysis).
+But because **intent regenerates cheaply** (the keystone), you do **not** author
+passages *before* generating — the first draft uses the **default arc** (zero
+authoring), then you assign passages and it **live-regenerates**. So: *chapters
+first (from analysis-in-Generate) → passages authored on top (live-regen) →
+phrases after.*
+
+### The source preview — what fills the Project panel pre-generation
+
+Don't show an empty funscript chart or a grey placeholder; show **what we have
+and what we're learning**, on the *same timeline the funscript will use*, so
+Generate visibly fills in the missing layer. It's the shared `forgemoment`
+TrackStack populated with **source lanes** instead of a funscript line, filling
+**progressively as the analysis-in-Generate runs** (the wait IS the reveal):
+
+- **Video poster frame / filmstrip + scrubber** *(video files)* — the artist
+  wants to see the screen.
+- **Waveform** *(always)* — the amplitude envelope.
+- **Beat grid + detected BPM** — ticks appear once beat-tracking lands
+  (octave-corrected, so the tempo shown is the *felt* one).
+- **Energy envelope** — loudness / intensity over time.
+- **Spectrogram lane, with the bass band highlighted** — the bass band *is* the
+  shaker's input signal, so this previews what the shaker will follow.
+- **Scene-cut markers** *(video)* — which feed chapter detection.
+- **Chapter blocks** — drawn on the timeline once segmented (editable there).
+- **File facts** — duration, format, sample rate.
+
+After Generate, the funscript line(s) drop into the **same** panel, overlaid on
+the waveform. One slot, progressively filled: **source → +beats → +chapters →
++funscript.**
+
+---
+
 ## 0. The spine — a linear pathway
 
 The product is a **numbered pathway** (the existing shell): the user moves
