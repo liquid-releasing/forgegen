@@ -44,6 +44,12 @@ How positions are distributed over the file. Captured by:
 narrow IQR with high band % is the dead-line failure mode. Wide IQR
 with low band % is gold-standard bimodal.
 
+> **The mechanism behind this dimension is now settled** — see
+> [`GENERATION_DEPTH_LAW.md`](GENERATION_DEPTH_LAW.md). Bimodal comes from a
+> *fixed full-depth backbone* (timing/density from the signal, depth held
+> full), proven across both audio and video inputs. Mapping any signal to
+> amplitude is what produces the dead centered bell.
+
 **Why it's not enough:** distribution averages over the file. A
 script with `IQR=80` could be reached by:
 - Constant strokes between 10 and 90 (no narrative arc)

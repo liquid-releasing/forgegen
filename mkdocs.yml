@@ -19,6 +19,7 @@ nav:
   - Home: index.md
   - Installation: installation.md
   - Quick Start: quick-start.md
+  - How the Generator Works: how-the-generator-works.md
   - Using the UI:
     - Overview: ui/index.md
     - Generate Tab: ui/generate.md
