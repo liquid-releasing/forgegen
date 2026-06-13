@@ -13,10 +13,10 @@
       
       
       
-        <link rel="prev" href="../how-the-generator-works/">
+        <link rel="prev" href="../quick-start/">
       
       
-        <link rel="next" href="generate/">
+        <link rel="next" href="../ui/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Overview - forgegen</title>
+        <title>How the Generator Works - forgegen</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#using-the-ui" class="md-skip">
+        <a href="#how-the-generator-works-and-why-you-can-trust-it" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Overview
+              How the Generator Works
             
           </span>
         </div>
@@ -238,9 +238,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../how-the-generator-works/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -257,13 +259,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../ui/" class="md-tabs__link">
           
   
   
@@ -453,90 +453,6 @@
       
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../how-the-generator-works/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    How the Generator Works
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-    
-    
-      
-        
-        
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Using the UI
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_5">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Using the UI
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
     
   
   
@@ -556,7 +472,7 @@
   <span class="md-ellipsis">
     
   
-    Overview
+    How the Generator Works
   
 
     
@@ -574,7 +490,7 @@
   <span class="md-ellipsis">
     
   
-    Overview
+    How the Generator Works
   
 
     
@@ -600,22 +516,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#sidebar" class="md-nav__link">
+  <a href="#the-short-version" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sidebar
+        The short version
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Sidebar">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-actually-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it actually does
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What it actually does">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#loading-a-file" class="md-nav__link">
+  <a href="#1-timing-when-a-stroke-happens" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Loading a file
+        1. Timing — when a stroke happens
       
     </span>
   </a>
@@ -623,10 +550,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#track-info" class="md-nav__link">
+  <a href="#2-depth-how-far-a-stroke-travels" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Track info
+        2. Depth — how far a stroke travels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-density-and-shape-how-busy-it-is-and-how-that-changes-over-the-scene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Density and shape — how busy it is, and how that changes over the scene
       
     </span>
   </a>
@@ -639,10 +577,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tabs" class="md-nav__link">
+  <a href="#the-knobs-you-get" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tabs
+        The knobs you get
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-you-can-trust-it-even-at-this-early-stage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why you can trust it — even at this early stage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-still-improving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's still improving
       
     </span>
   </a>
@@ -656,6 +616,85 @@
     </li>
   
 
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using the UI
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Using the UI
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -665,7 +704,7 @@
   
   
     <li class="md-nav__item">
-      <a href="generate/" class="md-nav__link">
+      <a href="../ui/generate/" class="md-nav__link">
         
   
   
@@ -693,7 +732,7 @@
   
   
     <li class="md-nav__item">
-      <a href="details/" class="md-nav__link">
+      <a href="../ui/details/" class="md-nav__link">
         
   
   
@@ -1121,22 +1160,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#sidebar" class="md-nav__link">
+  <a href="#the-short-version" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sidebar
+        The short version
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Sidebar">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-actually-does" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it actually does
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What it actually does">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#loading-a-file" class="md-nav__link">
+  <a href="#1-timing-when-a-stroke-happens" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Loading a file
+        1. Timing — when a stroke happens
       
     </span>
   </a>
@@ -1144,10 +1194,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#track-info" class="md-nav__link">
+  <a href="#2-depth-how-far-a-stroke-travels" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Track info
+        2. Depth — how far a stroke travels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-density-and-shape-how-busy-it-is-and-how-that-changes-over-the-scene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Density and shape — how busy it is, and how that changes over the scene
       
     </span>
   </a>
@@ -1160,10 +1221,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tabs" class="md-nav__link">
+  <a href="#the-knobs-you-get" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tabs
+        The knobs you get
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-you-can-trust-it-even-at-this-early-stage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why you can trust it — even at this early stage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-still-improving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's still improving
       
     </span>
   </a>
@@ -1187,68 +1270,160 @@
 
 
 
-<h1 id="using-the-ui">Using the UI<a class="headerlink" href="#using-the-ui" title="Permanent link">&para;</a></h1>
-<p>The forgegen UI has three areas: the <strong>sidebar</strong>, the <strong>Generate tab</strong>, and the <strong>Details tab</strong>.</p>
+<h1 id="how-the-generator-works-and-why-you-can-trust-it">How the generator works (and why you can trust it)<a class="headerlink" href="#how-the-generator-works-and-why-you-can-trust-it" title="Permanent link">&para;</a></h1>
+<p>forgegen is a "black box" in the sense that you drop in a track and a finished
+<code>.funscript</code> comes out. This page opens the box. You should understand what it
+does and why — because trusting an automated scripter is a reasonable thing to
+be cautious about, and we'd rather earn it than ask for it.</p>
 <hr />
-<h2 id="sidebar">Sidebar<a class="headerlink" href="#sidebar" title="Permanent link">&para;</a></h2>
-<p>The sidebar is always visible and handles file loading.</p>
-<h3 id="loading-a-file">Loading a file<a class="headerlink" href="#loading-a-file" title="Permanent link">&para;</a></h3>
-<p>Drag and drop any supported audio or video file onto the uploader, or click <strong>Browse files</strong>. Accepted formats: MP3, WAV, FLAC, OGG, M4A, AAC, MP4, MKV, MOV.</p>
-<p>When you load a video file, forgegen extracts the audio track automatically. You do not need to pre-extract audio.</p>
-<h3 id="track-info">Track info<a class="headerlink" href="#track-info" title="Permanent link">&para;</a></h3>
-<p>Once analysis completes, the sidebar shows:</p>
+<h2 id="the-short-version">The short version<a class="headerlink" href="#the-short-version" title="Permanent link">&para;</a></h2>
+<p>A great funscript does two things at once:</p>
+<ul>
+<li><strong>It uses the whole range.</strong> Strokes go nearly all the way down and nearly
+  all the way up — <em>rail to rail</em>. Weak auto-tools produce timid little
+  wiggles around the middle that feel like nothing.</li>
+<li><strong>It tells a story.</strong> It starts sparse, builds, peaks, and eases off — it has
+  a shape over time, not one flat setting. It is not a metronome.</li>
+</ul>
+<p>forgegen is built to deliver both — and we can <em>measure</em> whether it does.</p>
+<hr />
+<h2 id="what-it-actually-does">What it actually does<a class="headerlink" href="#what-it-actually-does" title="Permanent link">&para;</a></h2>
+<p>Generation has three jobs, and forgegen separates them cleanly:</p>
+<h3 id="1-timing-when-a-stroke-happens">1. Timing — <em>when</em> a stroke happens<a class="headerlink" href="#1-timing-when-a-stroke-happens" title="Permanent link">&para;</a></h3>
+<p>forgegen analyses the track's rhythm and locks strokes to it. Every reversal
+lands on the music, not on an arbitrary grid. (In a future version, video
+motion can supply this timing instead — see below.)</p>
+<p>One subtlety we handle for you: music can fool a rhythm detector into counting
+<em>double-time</em> — tapping on every half-beat instead of the beat you actually
+feel. Left alone, that makes a script feel frantic, twice as busy as it should
+be. forgegen detects this and folds the pace back to the pulse you'd nod your
+head to, keeping the strongest beats. The result is a script that moves at the
+scene's real tempo, not a caffeinated version of it.</p>
+<h3 id="2-depth-how-far-a-stroke-travels">2. Depth — <em>how far</em> a stroke travels<a class="headerlink" href="#2-depth-how-far-a-stroke-travels" title="Permanent link">&para;</a></h3>
+<p>This is the part most tools get wrong, and it's the heart of why our earlier
+output felt flat. <strong>forgegen uses full strokes by default.</strong> It does <em>not</em> make
+loud moments big and quiet moments small — that approach (which most auto-tools
+use, including the old version of this engine) mathematically collapses
+everything toward the middle and produces the timid, lifeless feel.</p>
+<p>Instead, strokes reach the rails, and <em>variety comes from elsewhere</em> (see
+density below). A few deliberately gentle passages — teases, breaks — pull back
+on purpose, but the default is the full, satisfying stroke.</p>
+<blockquote>
+<p>We didn't guess this. We measured a hand-authored reference script, found it
+spends ~68 % of its time at the rails, and confirmed the same rule holds
+whether the timing comes from audio <em>or</em> from video motion. It's a
+consistent law, not a preference. The technical write-up is
+<a href="../architecture/GENERATION_DEPTH_LAW.md"><code>architecture/GENERATION_DEPTH_LAW.md</code></a>.</p>
+</blockquote>
+<h3 id="3-density-and-shape-how-busy-it-is-and-how-that-changes-over-the-scene">3. Density and shape — <em>how busy</em> it is, and how that <strong>changes over the scene</strong><a class="headerlink" href="#3-density-and-shape-how-busy-it-is-and-how-that-changes-over-the-scene" title="Permanent link">&para;</a></h3>
+<p>If depth is the size of each stroke, density is <em>how often</em> the strokes come —
+and the most important thing we learned is that the great scripts don't hold
+one density the whole way through. They have a <strong>shape</strong>: they start sparse,
+build, push hardest near the peak, and ease off at the end. A flat wall of
+strokes — even full, perfectly-timed ones — feels mechanical. The <em>shape</em> is
+what makes it feel performed.</p>
+<p>Here's the part that surprised us, and it's worth knowing as an artist:
+<strong>that shape does not come from how loud the music is.</strong> We compared a beloved
+hand-made script against its soundtrack and found almost no connection between
+the volume and where the script got busy or calm. The clincher: at the very
+end, the music was still pounding while the script had deliberately <em>wound
+down</em> to a finish. The author wasn't following the track's volume — they were
+telling a story, and the volume of a song is not the story of a scene.</p>
+<p>So forgegen doesn't let the loudness knob decide how intense your script
+feels. Instead it lays down a natural arc — a gentle build-in, a fuller body,
+a lift near the climax, and a comedown at the end — and lets <em>you</em> shape it.
+You can keep the sensible default, adjust its shape, or set the intensity
+<strong>section by section</strong> — telling forgegen "this chapter is a slow tease, this
+one is the peak." If you've used <strong>passages in FunscriptForge</strong>, it's the same
+idea: you mark the stretches and say how hard each one drives.</p>
+<p>That's the philosophy in one line: <strong>the machine handles the craft — full
+strokes, locked to the beat — and you keep authorship of the story.</strong></p>
+<hr />
+<h2 id="the-knobs-you-get">The knobs you get<a class="headerlink" href="#the-knobs-you-get" title="Permanent link">&para;</a></h2>
+<p>Because depth is handled correctly and automatically, you are <strong>not</strong> stuck
+fiddling with amplitude sliders trying to keep strokes from clipping past 100
+or dying in the middle — the frustrating dance older tools (PythonDancer)
+required. Strokes are always in range and always full. That removes the knobs
+you used to <em>fight</em>, and leaves the ones that actually shape the feel:</p>
 <table>
 <thead>
 <tr>
-<th>Field</th>
-<th>Description</th>
+<th>Knob</th>
+<th>What it changes</th>
+<th>When to reach for it</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>BPM</strong></td>
-<td>Detected tempo in beats per minute</td>
+<td><strong>Arc</strong></td>
+<td>The overall shape over the whole piece — how strong the build-in, where the climax sits, how long the comedown</td>
+<td>Set the storytelling shape of the scene in one gesture</td>
 </tr>
 <tr>
-<td><strong>Beats</strong></td>
-<td>Total number of beats in the track</td>
+<td><strong>Chapter intensity</strong></td>
+<td>How hard each individual section drives (like assigning a passage its character)</td>
+<td>A piece that moves through distinct moods — tease, build, peak, cool-down</td>
 </tr>
 <tr>
-<td><strong>Phrases</strong></td>
-<td>Number of musical phrases detected</td>
-</tr>
-<tr>
-<td><strong>Duration</strong></td>
-<td>Track length in <code>m:ss.s</code> format</td>
+<td><strong>Density</strong></td>
+<td>The baseline busy-vs-breathy level</td>
+<td>Turn down for sensual/slow content; up for high-energy</td>
 </tr>
 <tr>
 <td><strong>Source</strong></td>
-<td>Beat extraction mode — <code>percussive</code> or <code>full</code></td>
+<td>Which part of the audio drives timing (beat, bass, voice, ambient)</td>
+<td>Pick what carries the rhythm in your track</td>
+</tr>
+<tr>
+<td><strong>Range</strong> <em>(optional)</em></td>
+<td>A gentler ceiling than full rail-to-rail</td>
+<td>Devices or preferences that want softer motion</td>
 </tr>
 </tbody>
 </table>
-<p>Loading a new file resets all generated output. The previous funscript is cleared automatically.</p>
+<p>The default settings are chosen to produce a strong, full-range, beat-locked
+draft <em>with a natural arc</em> and zero tuning. The knobs are for shaping the
+story, not for rescuing the mechanics.</p>
 <hr />
-<h2 id="tabs">Tabs<a class="headerlink" href="#tabs" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Tab</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><a href="generate/">Generate</a></td>
-<td>Choose a style, generate, preview, download</td>
-</tr>
-<tr>
-<td><a href="details/">Details</a></td>
-<td>Override phrase modes, tune low/high range, regenerate</td>
-</tr>
-</tbody>
-</table>
-<p>Start on <strong>Generate</strong> for the quick workflow. Use <strong>Details</strong> when you want more control over how specific sections of the track feel.</p>
+<h2 id="why-you-can-trust-it-even-at-this-early-stage">Why you can trust it — even at this early stage<a class="headerlink" href="#why-you-can-trust-it-even-at-this-early-stage" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>It targets a measured signature, not a vibe.</strong> We have hand-authored
+   reference scripts that people love, and a numeric fingerprint of what makes
+   them good. forgegen aims at that fingerprint and we check the output against
+   it.</li>
+<li><strong>The core rule is proven, not tuned.</strong> The "full strokes + timing from the
+   signal" rule holds across two completely independent inputs — audio rhythm
+   and video motion. That's the mark of something real rather than a fragile
+   trick.</li>
+<li><strong>Nothing is hidden or locked.</strong> The output is a standard <code>.funscript</code>. You
+   can open it in any player, see every stroke, and edit it freely in
+   FunscriptForge. forgegen gives you a strong starting point; it never traps
+   you in its choices.</li>
+<li><strong>We're honest about scope.</strong> forgegen listens to the soundtrack — it does
+   not (yet) watch the screen. It produces a draft that's coherent with the
+   <em>music</em>. Where you want strokes timed to a <em>visual</em> moment the audio doesn't
+   carry, that's a quick edit in FunscriptForge. We tell you where the line is
+   instead of pretending there isn't one.</li>
+</ol>
+<hr />
+<h2 id="whats-still-improving">What's still improving<a class="headerlink" href="#whats-still-improving" title="Permanent link">&para;</a></h2>
+<p>We are honest about being early. The current engine produces the right <em>kind</em>
+of script — full-range, beat-locked, and with a real build-and-release arc —
+and we are still tuning two things: the balance between full strokes and the
+gentler tease/break passages (so the texture matches the best hand-made work),
+and the default arc shapes for different kinds of content. The foundation —
+full depth, density as a story arc you control, timing locked to the track's
+real pulse — is settled; the refinement continues.</p>
+<p>And the same engine is built to accept <strong>video motion</strong> as a timing source in a
+future version — so the strokes can follow what's happening on screen, with the
+audio shaping intensity. Same engine, one more input.</p>
+<hr />
+<p><em>Want the engineering detail? See
+<a href="../architecture/GENERATION_DEPTH_LAW.md"><code>architecture/GENERATION_DEPTH_LAW.md</code></a>
+(full strokes),
+<a href="../architecture/GENERATION_DENSITY_ARC.md"><code>architecture/GENERATION_DENSITY_ARC.md</code></a>
+(the story arc), and
+<a href="../architecture/funscript-quality-characteristics.md"><code>architecture/funscript-quality-characteristics.md</code></a>.</em></p>
 
 
 

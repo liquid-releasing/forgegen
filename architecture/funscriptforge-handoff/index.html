@@ -235,6 +235,25 @@
   
   
   
+    <li class="md-tabs__item">
+      <a href="../../how-the-generator-works/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  How the Generator Works
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
     
     
       <li class="md-tabs__item">
@@ -430,6 +449,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../how-the-generator-works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How the Generator Works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -444,10 +490,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -465,8 +511,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -587,10 +633,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   
@@ -608,8 +654,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -758,10 +804,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -779,8 +825,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -873,10 +919,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
             
   
   
@@ -894,8 +940,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1197,12 +1243,12 @@ For audio-only sources without authored chapters, forgegen emits
 <code>structural.chapter_proposals: []</code> (empty) — FF treats this the same as
 "no chapters discovered."</p>
 <h4 id="where-the-writer-lives">Where the writer lives<a class="headerlink" href="#where-the-writer-lives" title="Permanent link">&para;</a></h4>
-<p>The funscript-export path in <a href="../../panels/generate.py"><code>panels/generate.py</code></a>
+<p>The funscript-export path in the Tauri bridge (<code>tauri/src-tauri/src/commands.rs</code>)
 has two branches:</p>
 <ul>
 <li><strong><code>Save to folder</code></strong> (line ~625) — writes <code>&lt;stem&gt;.funscript</code> to the user's
   output dir. Add: <code>&lt;stem&gt;.analysis.json</code> adjacent.</li>
-<li><strong><code>Download</code></strong> (line ~636) — Streamlit browser download. Cannot easily ship
+<li><strong>Save/copy actions</strong> — Tauri native file operations. Browser download is not the primary desktop path.
   a sidecar through <code>download_button</code>. <strong>Phase 1 caveat:</strong> browser download
   carries the funscript only; users who download (rather than save) lose the
   analysis.json. Acceptable trade-off for v0.1.</li>
@@ -1258,7 +1304,7 @@ and we have a sense of where field shapes need divergence vs. convergence.</p>
 <h2 id="implementation-checklist-v01">Implementation checklist (v0.1)<a class="headerlink" href="#implementation-checklist-v01" title="Permanent link">&para;</a></h2>
 <ul>
 <li>[ ] Confirm <code>videoflow</code> is on forgegen's import path (add to requirements if not)</li>
-<li>[ ] In <code>panels/generate.py</code> "Save to folder" branch: call <code>videoflow.chapters.load_chapters(source)</code>, build minimal analysis.json dict, write next to funscript</li>
+<li>[ ] In the Tauri generate path: call <code>videoflow.chapters.load_chapters(source)</code>, build minimal analysis.json dict, write next to funscript</li>
 <li>[ ] Map <code>videoflow.chapters.Chapter</code> → <code>structural.chapter_proposals[]</code> shape (per schema: <code>start_ms</code>, <code>end_ms</code>, <code>intent_proposal</code>, <code>confidence</code>, <code>evidence</code>)</li>
 <li>[ ] Compute <code>source.audio_md5</code> (decide partial-vs-full hashing)</li>
 <li>[ ] Test: video with embedded chapters → sidecar contains them</li>
