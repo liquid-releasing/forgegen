@@ -14,8 +14,8 @@ A great funscript does two things at once:
 - **It uses the whole range.** Strokes go nearly all the way down and nearly
   all the way up — *rail to rail*. Weak auto-tools produce timid little
   wiggles around the middle that feel like nothing.
-- **It breathes.** It is busy where the content is intense and sparse where it
-  is calm. It rises and settles. It is not a metronome.
+- **It tells a story.** It starts sparse, builds, peaks, and eases off — it has
+  a shape over time, not one flat setting. It is not a metronome.
 
 forgegen is built to deliver both — and we can *measure* whether it does.
 
@@ -30,6 +30,13 @@ Generation has three jobs, and forgegen separates them cleanly:
 forgegen analyses the track's rhythm and locks strokes to it. Every reversal
 lands on the music, not on an arbitrary grid. (In a future version, video
 motion can supply this timing instead — see below.)
+
+One subtlety we handle for you: music can fool a rhythm detector into counting
+*double-time* — tapping on every half-beat instead of the beat you actually
+feel. Left alone, that makes a script feel frantic, twice as busy as it should
+be. forgegen detects this and folds the pace back to the pulse you'd nod your
+head to, keeping the strongest beats. The result is a script that moves at the
+scene's real tempo, not a caffeinated version of it.
 
 ### 2. Depth — *how far* a stroke travels
 
@@ -49,12 +56,33 @@ on purpose, but the default is the full, satisfying stroke.
 > consistent law, not a preference. The technical write-up is
 > [`architecture/GENERATION_DEPTH_LAW.md`](../architecture/GENERATION_DEPTH_LAW.md).
 
-### 3. Density — *how busy* it is
+### 3. Density and shape — *how busy* it is, and how that **changes over the scene**
 
-This is where the energy of the track goes. Loud, driving sections fire on
-more beats; calm sections thin out and breathe. This is what makes a script
-feel *alive to the content* rather than mechanical — and it's the right home
-for energy, instead of shrinking your strokes.
+If depth is the size of each stroke, density is *how often* the strokes come —
+and the most important thing we learned is that the great scripts don't hold
+one density the whole way through. They have a **shape**: they start sparse,
+build, push hardest near the peak, and ease off at the end. A flat wall of
+strokes — even full, perfectly-timed ones — feels mechanical. The *shape* is
+what makes it feel performed.
+
+Here's the part that surprised us, and it's worth knowing as an artist:
+**that shape does not come from how loud the music is.** We compared a beloved
+hand-made script against its soundtrack and found almost no connection between
+the volume and where the script got busy or calm. The clincher: at the very
+end, the music was still pounding while the script had deliberately *wound
+down* to a finish. The author wasn't following the track's volume — they were
+telling a story, and the volume of a song is not the story of a scene.
+
+So forgegen doesn't let the loudness knob decide how intense your script
+feels. Instead it lays down a natural arc — a gentle build-in, a fuller body,
+a lift near the climax, and a comedown at the end — and lets *you* shape it.
+You can keep the sensible default, adjust its shape, or set the intensity
+**section by section** — telling forgegen "this chapter is a slow tease, this
+one is the peak." If you've used **passages in FunscriptForge**, it's the same
+idea: you mark the stretches and say how hard each one drives.
+
+That's the philosophy in one line: **the machine handles the craft — full
+strokes, locked to the beat — and you keep authorship of the story.**
 
 ---
 
@@ -68,14 +96,15 @@ you used to *fight*, and leaves the ones that actually shape the feel:
 
 | Knob | What it changes | When to reach for it |
 |---|---|---|
-| **Density** | How busy vs. breathy the script is | Turn down for sensual/slow content; up for high-energy |
-| **Tone / arc** | The overall rise-and-settle shape (flat, rising, falling, or auto-from-energy) | Match the narrative arc of the scene |
-| **Per-chapter recipes** | Apply different density/tone/source per chapter | Long pieces that change character partway through |
+| **Arc** | The overall shape over the whole piece — how strong the build-in, where the climax sits, how long the comedown | Set the storytelling shape of the scene in one gesture |
+| **Chapter intensity** | How hard each individual section drives (like assigning a passage its character) | A piece that moves through distinct moods — tease, build, peak, cool-down |
+| **Density** | The baseline busy-vs-breathy level | Turn down for sensual/slow content; up for high-energy |
 | **Source** | Which part of the audio drives timing (beat, bass, voice, ambient) | Pick what carries the rhythm in your track |
 | **Range** *(optional)* | A gentler ceiling than full rail-to-rail | Devices or preferences that want softer motion |
 
 The default settings are chosen to produce a strong, full-range, beat-locked
-draft with zero tuning. The knobs are for shaping, not for rescue.
+draft *with a natural arc* and zero tuning. The knobs are for shaping the
+story, not for rescuing the mechanics.
 
 ---
 
@@ -104,10 +133,12 @@ draft with zero tuning. The knobs are for shaping, not for rescue.
 ## What's still improving
 
 We are honest about being early. The current engine produces the right *kind*
-of script — full-range and beat-locked — and we are tuning the balance between
-full strokes and the gentler tease/break passages so the texture matches the
-best hand-made work even more closely. The foundation (full depth, energy as
-density, timing locked to the track) is settled; the refinement continues.
+of script — full-range, beat-locked, and with a real build-and-release arc —
+and we are still tuning two things: the balance between full strokes and the
+gentler tease/break passages (so the texture matches the best hand-made work),
+and the default arc shapes for different kinds of content. The foundation —
+full depth, density as a story arc you control, timing locked to the track's
+real pulse — is settled; the refinement continues.
 
 And the same engine is built to accept **video motion** as a timing source in a
 future version — so the strokes can follow what's happening on screen, with the
@@ -117,4 +148,7 @@ audio shaping intensity. Same engine, one more input.
 
 *Want the engineering detail? See
 [`architecture/GENERATION_DEPTH_LAW.md`](../architecture/GENERATION_DEPTH_LAW.md)
-and [`architecture/funscript-quality-characteristics.md`](../architecture/funscript-quality-characteristics.md).*
+(full strokes),
+[`architecture/GENERATION_DENSITY_ARC.md`](../architecture/GENERATION_DENSITY_ARC.md)
+(the story arc), and
+[`architecture/funscript-quality-characteristics.md`](../architecture/funscript-quality-characteristics.md).*

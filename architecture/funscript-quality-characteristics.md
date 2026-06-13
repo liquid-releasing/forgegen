@@ -93,14 +93,31 @@ could move slowly across 0–100 (looks alive but feels boring) or burst
 rapidly within 30–70 (narrower IQR but feels lively). Velocity stats
 disambiguate.
 
-**Action item:** extend the benchmark harness to compute these. Likely
-requires a tiny `funscript_stats.py` helper that reads the actions
-list and computes per-stroke deltas, per-action timings, and rate
-percentiles.
+**Action item:** ~~extend the benchmark harness to compute these. Likely
+requires a tiny `funscript_stats.py` helper~~ — **DONE (2026-06-13).**
+`videoflow/src/videoflow/funscript_stats.py` is the shared metrics module:
+`position_stats` (decile shape), `motion_stats` (rate / avg_stroke /
+avg_velocity / p90), `windowed_profile`, and `dynamics_index`
+(`rate_cov` / `velocity_cov`). Used by generation benchmarking, the future
+user diagnostic lens, and phrase/mode segmentation.
 
 ---
 
-## Dimension 3 — Structural shape (largely unmeasured)
+## Dimension 3 — Structural shape (measured + mechanised, 2026-06-13)
+
+> **The mechanism behind this dimension is now settled** — see
+> [`GENERATION_DENSITY_ARC.md`](GENERATION_DENSITY_ARC.md). Key finding: a
+> great script's dynamic density is a **narrative arc the author imposes**
+> (sparse build-in · flat body · climax bump · comedown taper), **not** a
+> response to audio loudness (measured corr between music energy and the
+> gold's per-window stroke rate ≈ 0.17 — the comedown happens while the music
+> is still loud). The body is flat (CoV ≈ 0.16); the dynamics live in the
+> intro ramp and outro taper. The engine drives density from a *position /
+> chapter* arc (gate-decimation for the sparse ends, sub-stroke count for the
+> climax), author-declared via a tunable default curve or chapter intensities
+> (the passages gesture). `funscript_stats.windowed_profile` +
+> `dynamics_index` are the measurement; target `rate_cov` ≈ 0.37–0.46 (a band
+> across two golds, not one number).
 
 How the curve evolves over the file. Captured by:
 

@@ -9,6 +9,11 @@
 > (Dimension 1 — distribution shape names the *target*; this doc explains the
 > *mechanism*) and [`VIDEO_VIA_EXTERNAL_GENERATOR.md`](VIDEO_VIA_EXTERNAL_GENERATOR.md)
 > (the video source whose CV output independently confirmed the law).
+>
+> **This doc is the *depth* axis (how far a stroke reaches).** Its companion
+> [`GENERATION_DENSITY_ARC.md`](GENERATION_DENSITY_ARC.md) is the *density*
+> axis (how the stroke rate moves over the piece — the narrative arc). Two
+> axes, two independent mechanisms.
 
 ---
 
