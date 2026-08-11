@@ -1,10 +1,22 @@
 # Installation
 
-## Standalone app (recommended)
+!!! warning "forgegen is retired — install FunscriptForge instead"
 
-Pre-built desktop installers for Windows, macOS, and Linux are available at
-**[forgegen.app](https://forgegen.app)**. No Python, no FFmpeg install,
-no dependencies — unzip and run.
+    forgegen's generation engine now ships inside **FunscriptForge**, in its
+    **Generate** tab, along with the editing, multi-device output and export
+    that used to need a second app.
+
+    **[Download FunscriptForge](https://github.com/liquid-releasing/funscriptforge-releases/releases/latest)**
+
+    The v0.3.0 downloads below still work and run offline, but forgegen
+    receives no further updates. `forgegen.app` is being retired, so use the
+    GitHub links rather than the website.
+
+## Standalone app
+
+Pre-built desktop installers for Windows, macOS, and Linux are on the
+**[final release page](https://github.com/liquid-releasing/forgegen-releases/releases/latest)**.
+No Python, no FFmpeg install, no dependencies — unzip and run.
 
 [Download for Windows](https://github.com/liquid-releasing/forgegen-releases/releases/latest/download/ForgeGen-windows.zip){ .md-button .md-button--primary }
 [Download for macOS](https://github.com/liquid-releasing/forgegen-releases/releases/latest/download/ForgeGen-macos.zip){ .md-button }
