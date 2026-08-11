@@ -1,5 +1,27 @@
 # forgegen
 
+> ## ⚠️ forgegen is retired — its generation engine now ships inside FunscriptForge
+>
+> **Everything forgegen did is in [FunscriptForge](https://github.com/liquid-releasing/funscriptforge)'s
+> Generate tab**, driven by the same engine (now maintained as `videoflow`).
+> Audio-to-funscript, phrase-level mode shaping (tease / edging / break /
+> steady), beat detection and energy analysis — all of it, plus the editing,
+> multi-device output and export that used to require the handoff.
+>
+> **If you use forgegen:** install FunscriptForge and use its Generate tab.
+> Your existing `.funscript` files keep working — nothing to migrate.
+>
+> **Download:** [FunscriptForge releases](https://github.com/liquid-releasing/funscriptforge-releases/releases/latest)
+>
+> The last forgegen release (v0.3.0) stays downloadable and will keep working
+> offline, but it receives no further updates or fixes. This repository is kept
+> as a public record of the engine's development; the code that succeeded it is
+> in FunscriptForge and videoflow.
+>
+> _Retired 2026-08-11._
+
+---
+
 **Audio to funscript — in seconds, not hours.**
 
 forgegen is a haptic content generation engine. Drop in a music track. It
